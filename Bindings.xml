@@ -1,0 +1,6 @@
+<Bindings>
+    <Binding name="CLICK RePotionHealthButton:LeftButton" header="REPOTION" category="ADDONS">
+    </Binding>
+    <Binding name="CLICK RePotionManaButton:LeftButton" category="ADDONS">
+    </Binding>
+</Bindings>

@@ -1,0 +1,32 @@
+## Interface: 16001
+## Title: RePotion
+## Notes: Tracks your health and mana potions, uses the right one from a button, a key or a macro, and restocks them from the auction house and the bank.
+## Notes-ruRU: Следит за зельями здоровья и маны, пьёт нужное с кнопки, клавиши или макроса и пополняет запас с аукциона и из банка.
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\RePotion\Media\Icon
+## SavedVariables: RePotionDB
+## SavedVariablesPerCharacter: RePotionCharDB
+## AddonCompartmentFunc: RePotion_OnAddonCompartmentClick
+
+Libs\LibJagerenteDock\LibJagerenteDock.lua
+Core\Init.lua
+Core\Locales.lua
+Data\Potions.lua
+Core\Database.lua
+Core\Catalog.lua
+Core\Inventory.lua
+Core\Picker.lua
+Core\Macros.lua
+Core\Market.lua
+Core\Bank.lua
+UI\Theme.lua
+UI\Widgets.lua
+UI\TestMode.lua
+UI\Bar.lua
+UI\SidePanel.lua
+UI\AuctionPanel.lua
+UI\BankPanel.lua
+UI\MinimapButton.lua
+UI\About.lua
+UI\Options.lua
+Core\Commands.lua

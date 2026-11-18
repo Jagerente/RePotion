@@ -1,0 +1,35 @@
+local _, ns = ...
+
+ns.POTIONS = {
+    health = {
+        { item = 118, spell = 439, amount = 80, low = 70, high = 90, level = 1, market = true },
+        { item = 268881, spell = 439, amount = 80, low = 70, high = 90, level = 1, market = false },
+        { item = 287966, spell = 439, amount = 80, low = 70, high = 90, level = 1, market = false },
+        { item = 287967, spell = 440, amount = 160, low = 140, high = 180, level = 1, market = false },
+        { item = 858, spell = 440, amount = 160, low = 140, high = 180, level = 3, market = true },
+        { item = 268882, spell = 440, amount = 160, low = 140, high = 180, level = 3, market = false },
+        { item = 929, spell = 441, amount = 320, low = 280, high = 360, level = 12, market = true },
+        { item = 268883, spell = 441, amount = 320, low = 280, high = 360, level = 12, market = false },
+        { item = 287977, spell = 2024, amount = 520, low = 455, high = 585, level = 1, market = false },
+        { item = 1710, spell = 2024, amount = 520, low = 455, high = 585, level = 21, market = true },
+        { item = 223914, spell = 450107, amount = 650, low = 585, high = 715, level = 20, market = false },
+        { item = 288896, spell = 4042, amount = 800, low = 700, high = 900, level = 1, market = false },
+        { item = 3928, spell = 4042, amount = 800, low = 700, high = 900, level = 35, market = true },
+        { item = 18839, spell = 4042, amount = 800, low = 700, high = 900, level = 35, market = false },
+        { item = 13446, spell = 17534, amount = 1400, low = 1050, high = 1750, level = 45, market = true },
+        { item = 223913, spell = 450106, amount = 1500, low = 1350, high = 1650, level = 40, market = false },
+    },
+    mana = {
+        { item = 3087, spell = 29236, amount = 160, low = 140, high = 180, level = 0, market = true },
+        { item = 287968, spell = 437, amount = 160, low = 140, high = 180, level = 1, market = false },
+        { item = 2455, spell = 437, amount = 160, low = 140, high = 180, level = 5, market = true },
+        { item = 287969, spell = 438, amount = 320, low = 280, high = 360, level = 1, market = false },
+        { item = 3385, spell = 438, amount = 320, low = 280, high = 360, level = 14, market = true },
+        { item = 3827, spell = 2023, amount = 520, low = 455, high = 585, level = 22, market = true },
+        { item = 6149, spell = 11903, amount = 800, low = 700, high = 900, level = 31, market = true },
+        { item = 288897, spell = 17530, amount = 1200, low = 900, high = 1500, level = 1, market = false },
+        { item = 13443, spell = 17530, amount = 1200, low = 900, high = 1500, level = 41, market = true },
+        { item = 18841, spell = 17530, amount = 1200, low = 900, high = 1500, level = 41, market = false },
+        { item = 13444, spell = 17531, amount = 1800, low = 1350, high = 2250, level = 49, market = true },
+    },
+}
