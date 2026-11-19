@@ -53,3 +53,10 @@ Both panels sit to the right of their window and follow it, also when a bag addo
 - **Auction:** the auction house list, counting the bank, the price jump guard, where the panel sits
 - **Bank:** the bank panel, taking potions right away, where the panel sits
 - **General:** the potion keys, minimap button, language
+
+## Other Re addons
+
+Panels like this one for the other things you carry, with the same restock at the auction house and the bank:
+
+- [ReScroll](https://www.curseforge.com/projects/1812247) shows which scroll buffs you are missing, applies them with one button and restocks scrolls ([GitHub](https://github.com/Jagerente/ReScroll)).
+- [ReFood](https://www.curseforge.com/projects/1816338) eats and drinks the strongest food you carry, reminds you of Well Fed and restocks food at the vendor ([GitHub](https://github.com/Jagerente/ReFood)).
