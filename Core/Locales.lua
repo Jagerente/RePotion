@@ -163,6 +163,10 @@ STRINGS.enUS = {
     MOVE_EXPLAIN = "Drag the title line or Alt-drag a button to move the panel; a plain drag on a button gives you its macro. Middle-click puts the panel back.",
     RECENTER = "Move the panel back",
 
+    SECTION_BACKGROUND = "Background",
+    BAR_BACKGROUND = "Panel with buttons",
+    PANEL_BACKGROUND = "Auction and bank panels",
+
     SECTION_BEHAVIOR = "Behavior",
     ENABLE = "Show the panel",
     ENABLE_DESC = "Off: the panel is hidden everywhere, the keys and macros still work.",
@@ -355,6 +359,10 @@ STRINGS.ruRU = {
     LOCKED_DESC = "Панель больше нельзя передвинуть.",
     MOVE_EXPLAIN = "Панель двигается за строку заголовка или Alt+перетаскиванием кнопки, обычное перетаскивание кнопки даёт её макрос. Клик колёсиком возвращает панель на место.",
     RECENTER = "Вернуть панель на место",
+
+    SECTION_BACKGROUND = "Фон",
+    BAR_BACKGROUND = "Панель с кнопками",
+    PANEL_BACKGROUND = "Панели у аукциона и банка",
 
     SECTION_BEHAVIOR = "Поведение",
     ENABLE = "Показывать панель",

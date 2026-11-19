@@ -2,7 +2,7 @@
 ## Title: RePotion
 ## Notes: Tracks your health and mana potions, uses the right one from a button, a key or a macro, and restocks them from the auction house and the bank.
 ## Notes-ruRU: Следит за зельями здоровья и маны, пьёт нужное с кнопки, клавиши или макроса и пополняет запас с аукциона и из банка.
-## Version: 1.0.0
+## Version: 1.1.0
 ## IconTexture: Interface\AddOns\RePotion\Media\Icon
 ## SavedVariables: RePotionDB
 ## SavedVariablesPerCharacter: RePotionCharDB

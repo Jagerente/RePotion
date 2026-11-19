@@ -24,6 +24,8 @@ local DEFAULTS = {
     layout = "HORIZONTAL",
     showHeader = true,
     showCounts = true,
+    barBackground = 92,
+    panelBackground = 98,
     locked = false,
     position = { point = "CENTER", x = -100, y = -160 },
     minimap = { hide = false, angle = 260 },

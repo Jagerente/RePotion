@@ -28,6 +28,7 @@ local ICON_SIZE_MIN, ICON_SIZE_MAX = 24, 64
 local SPACING_MAX = 16
 local RESET_CONFIRM_SECONDS = 3
 local PANEL_OFFSET = 500
+local PERCENT_MAX = 100
 
 local window
 local pages = {}
@@ -294,7 +295,7 @@ local function BuildAuction()
     AddParagraph(page, "BUY_EXPLAIN", 6)
 
     AddHeading(page, "SECTION_PRICES")
-    AddSlider(page, "priceStep", "PRICE_STEP", 0, 100, FormatPercent)
+    AddSlider(page, "priceStep", "PRICE_STEP", 0, PERCENT_MAX, FormatPercent)
     AddParagraph(page, "PRICE_STEP_EXPLAIN", 6)
 
     AddHeading(page, "SECTION_PLACEMENT")
@@ -349,6 +350,10 @@ local function BuildPanel()
     AddToggle(page, "locked", "LOCKED", "LOCKED_DESC")
     AddParagraph(page, "MOVE_EXPLAIN", 6)
     AddRecenterButton(page)
+
+    AddHeading(page, "SECTION_BACKGROUND")
+    AddSlider(page, "barBackground", "BAR_BACKGROUND", 0, PERCENT_MAX, FormatPercent, 4)
+    AddSlider(page, "panelBackground", "PANEL_BACKGROUND", 0, PERCENT_MAX, FormatPercent)
 end
 
 local function AddResetButton(page)

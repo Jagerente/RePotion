@@ -24,7 +24,8 @@ local SCRIM_ALPHA = 0.85
 local HOVER_ALPHA, HOVER_TIME = 0.14, 0.12
 local EMPTY_ALPHA = 0.45
 local SHOW_TIME = 0.18
-local BACKGROUND = { 0.078, 0.076, 0.072, 0.92 }
+local BACKGROUND = { 0.078, 0.076, 0.072 }
+local PERCENT = 100
 local ICON_BACK = { 0, 0, 0, 0.7 }
 local STRATA = "MEDIUM"
 local NO_ACTION = "none"
@@ -308,6 +309,10 @@ local function FadeBarIn()
     UI.Tween(barFade, 1, SHOW_TIME, function(_, value) bar:SetAlpha(value) end)
 end
 
+local function PaintBackground()
+    bar.background:SetAlpha(ns.db.barBackground / PERCENT)
+end
+
 local function Create()
     holder = CreateFrame("Frame", "RePotionHolder", UIParent)
     holder:SetSize(1, 1)
@@ -319,7 +324,8 @@ local function Create()
 
     bar = CreateFrame("Frame", "RePotionBar", holder)
     bar:SetPoint("TOPLEFT", holder, "CENTER")
-    UI.Fill(bar, BACKGROUND)
+    bar.background = UI.Fill(bar, BACKGROUND)
+    PaintBackground()
     CreateHeader()
     for _, potionType in ipairs(Catalog.types) do
         CreateButton(potionType)
@@ -419,6 +425,7 @@ ns.Listen("OPTIONS_SHOWN", Bar.Refresh)
 ns.Listen("LOCALE_CHANGED", Bar.Refresh)
 ns.Listen("SETTING_CHANGED", function(key)
     if not holder then return end
+    if key == nil or key == "barBackground" then PaintBackground() end
     if (key == nil or key == "position") and not InCombatLockdown() then PlaceHolder() end
     Bar.Refresh()
 end)

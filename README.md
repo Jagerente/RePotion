@@ -49,7 +49,7 @@ Both panels sit to the right of their window and follow it, also when a bag addo
 `/potions` (or `/repotion`) opens the settings:
 
 - **Potions:** which types to track on this character, the skip threshold, how many potions to keep, the macros
-- **Panel:** when it shows up, potions you are out of, icon size, spacing, row or column, the title line, the count, lock
+- **Panel:** when it shows up, potions you are out of, icon size, spacing, row or column, the title line, the count, lock, the background of the panel and of the auction and bank panels
 - **Auction:** the auction house list, counting the bank, the price jump guard, where the panel sits
 - **Bank:** the bank panel, taking potions right away, where the panel sits
 - **General:** the potion keys, minimap button, language
