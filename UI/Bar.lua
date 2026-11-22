@@ -12,11 +12,15 @@ local Picker = ns.Picker
 local Bar = { buttons = {} }
 ns.Bar = Bar
 
-local BUTTON_NAMES = {
-    health = "RePotionHealthButton",
-    mana = "RePotionManaButton",
-    freeAction = "RePotionFreeActionButton",
+local NAMES = {
+    health = "RePotionHealth",
+    mana = "RePotionMana",
+    freeAction = "RePotionFreeAction",
 }
+local KEY_BUTTON, PANEL_BUTTON = "Button", "PanelButton"
+local TIP_GLYPH_HEIGHT = 14
+local TIP_GLYPH = UI.InlineGlyph(TIP_GLYPH_HEIGHT)
+local TIP_GAP = " "
 local PAD = 4
 local HEADER_HEIGHT, HEADER_GAP = 14, 5
 local HEADER_GLYPH_HEIGHT, HEADER_GLYPH_GAP = 11, 5
@@ -42,6 +46,7 @@ local VISIBILITY_STATES = {
 
 local holder, bar, header, glyph, title
 local buttons = Bar.buttons
+local keyButtons = {}
 local visible = {}
 local barFade = {}
 local driverState
@@ -49,15 +54,25 @@ local pendingLayout = false
 local moving = false
 
 function Bar.Binding(potionType)
-    return "CLICK " .. BUTTON_NAMES[potionType.key] .. ":LeftButton"
+    return "CLICK " .. NAMES[potionType.key] .. KEY_BUTTON .. ":LeftButton"
+end
+
+local function CountColor(potionType, kept)
+    if kept == 0 then return C.bad end
+    if kept < Inventory.StockTarget(potionType) then return C.warn end
+    return C.text
 end
 
 local function AddLine(text, color)
     GameTooltip:AddLine(text, color[1], color[2], color[3], true)
 end
 
-local function AddPair(left, right, color)
-    GameTooltip:AddDoubleLine(left, right, C.muted[1], C.muted[2], C.muted[3], color[1], color[2], color[3])
+local function AddRow(left, right, leftColor, rightColor)
+    GameTooltip:AddDoubleLine(left, right, leftColor[1], leftColor[2], leftColor[3], rightColor[1], rightColor[2], rightColor[3])
+end
+
+local function AddGap()
+    GameTooltip:AddLine(TIP_GAP)
 end
 
 local function Describe(potion)
@@ -66,49 +81,62 @@ local function Describe(potion)
     return string.format(L.POTION_WITH_RANGE, Catalog.Name(potion), range)
 end
 
-local function AddPickLines(record)
+local function AddHeader(potionType)
+    AddGap()
+    AddRow(TIP_GLYPH .. " " .. ns.TITLE, Catalog.TypeName(potionType), C.accent, C.muted)
+end
+
+local function AddStatusLines(record)
     local active = record.active
     if not active.main then
         AddLine(L.TIP_NONE, C.bad)
-        return
+    elseif active.fallback then
+        AddRow(L.TIP_FALLBACK, Catalog.Name(active.fallback), C.muted, C.text)
     end
-    AddPair(L.TIP_CLICK, Describe(active.main), C.text)
-    if active.fallback then AddLine(string.format(L.TIP_FALLBACK, Catalog.Name(active.fallback)), C.muted) end
+    if InCombatLockdown() and record.text ~= active.text then AddLine(L.TIP_AFTER_COMBAT, C.warn) end
 end
 
-local function AddBagLines(record)
+local function AddBagLines(record, grade)
     local owned = record.owned
-    if #owned == 0 then return end
-    local grade = Inventory.StockPotion(record.type)
-    GameTooltip:AddLine(" ")
+    if #owned < 2 then return end
     for index = #owned, 1, -1 do
         local potion = owned[index]
-        local count = string.format(L.COUNT, Inventory.Count(potion.item))
-        if not Inventory.Counts(potion, grade) then
-            AddPair(string.format(L.TIP_WEAKER, Catalog.Name(potion)), count, C.muted)
-        else
-            AddPair(Describe(potion), count, C.text)
-        end
+        local color = Inventory.Counts(potion, grade) and C.text or C.muted
+        AddRow(Describe(potion), string.format(L.COUNT, Inventory.Count(potion.item)), color, color)
     end
 end
 
-local function AddStockLines(potionType)
+local function AddStockLines(record)
+    local potionType = record.type
     local grade = Inventory.StockPotion(potionType)
     local have, bank = Inventory.StockCount(potionType, grade)
-    AddLine(string.format(L.TIP_STOCK, have, Inventory.StockTarget(potionType)), have > 0 and C.muted or C.bad)
+    AddGap()
+    AddRow(L.TIP_STOCK, string.format(L.TIP_STOCK_VALUE, have, Inventory.StockTarget(potionType)), C.muted, CountColor(potionType, have))
+    if bank > 0 then AddRow(L.TIP_IN_BANK, bank, C.muted, C.text) end
     if grade and potionType.graded then AddLine(string.format(L.TIP_STOCK_FROM, Catalog.Name(grade)), C.muted) end
-    if bank > 0 then AddLine(string.format(L.TIP_IN_BANK, bank), C.muted) end
+    AddBagLines(record, grade)
+end
+
+local function AddHintLines()
+    AddGap()
+    AddRow(L.TIP_SHIFT_DRAG, L.TIP_TAKE_MACRO, C.muted, C.muted)
+    if not ns.db.locked then AddRow(L.TIP_ALT_DRAG, L.TIP_MOVE, C.muted, C.muted) end
+    AddRow(L.TIP_RIGHT_CLICK, L.TIP_SETTINGS, C.muted, C.muted)
 end
 
 local function ShowTooltip(button)
     local record = button.record
+    local potion = Picker.Shown(record)
     GameTooltip:SetOwner(button, UI.VerticalAnchor(button))
-    GameTooltip:SetText(Catalog.TypeName(button.type), C.text[1], C.text[2], C.text[3])
-    AddPickLines(record)
-    AddBagLines(record)
-    AddStockLines(button.type)
-    if InCombatLockdown() and record.text ~= record.active.text then AddLine(L.TIP_AFTER_COMBAT, C.warn) end
-    AddLine(L.TIP_HINT, C.muted)
+    if potion then
+        GameTooltip:SetItemByID(potion.item)
+    else
+        GameTooltip:SetText(Catalog.TypeName(button.type), C.text[1], C.text[2], C.text[3])
+    end
+    AddHeader(button.type)
+    AddStatusLines(record)
+    AddStockLines(record)
+    AddHintLines()
     GameTooltip:Show()
 end
 
@@ -120,12 +148,6 @@ local function PaintCooldown(button, potion)
     else
         button.cooldown:Clear()
     end
-end
-
-local function CountColor(potionType, kept)
-    if kept == 0 then return C.bad end
-    if kept < Inventory.StockTarget(potionType) then return C.warn end
-    return C.text
 end
 
 local function PaintButton(button)
@@ -185,7 +207,7 @@ local function StopMoving()
 end
 
 local function OnDragStart(button)
-    if IsAltKeyDown() then return end
+    if not IsShiftKeyDown() or IsAltKeyDown() then return end
     GameTooltip:Hide()
     ns.Macros.Pickup(button.type)
 end
@@ -196,8 +218,7 @@ local function StartAltMoving()
     return StartMoving()
 end
 
-local function OnPostClick(_, mouseButton, down)
-    if down then return end
+local function OnPostClick(_, mouseButton)
     if mouseButton == "RightButton" then
         ns.Options.Toggle()
     elseif mouseButton == "MiddleButton" and not ns.db.locked and not InCombatLockdown() then
@@ -243,16 +264,26 @@ local function SetPressed(button, pressed)
     button.icon:SetPoint("BOTTOMRIGHT", -inset, inset)
 end
 
+local function CreateKeyButton(potionType)
+    local button = CreateFrame("Button", NAMES[potionType.key] .. KEY_BUTTON, UIParent, "SecureActionButtonTemplate")
+    button:RegisterForClicks("AnyUp", "AnyDown")
+    button:SetAttribute("type", "macro")
+    button:SetAttribute("macrotext", Picker.records[potionType.key].active.text)
+    keyButtons[potionType.key] = button
+end
+
 local function CreateButton(potionType)
-    local button = CreateFrame("Button", BUTTON_NAMES[potionType.key], bar, "SecureActionButtonTemplate")
+    local button = CreateFrame("Button", NAMES[potionType.key] .. PANEL_BUTTON, bar, "SecureActionButtonTemplate")
     button.type = potionType
     button.record = Picker.records[potionType.key]
-    button:RegisterForClicks("AnyUp", "AnyDown")
+    button:RegisterForClicks("AnyUp")
     button:RegisterForDrag("LeftButton")
     button:SetAttribute("type", "macro")
+    button:SetAttribute("useOnKeyDown", false)
     button:SetAttribute("*type2", NO_ACTION)
     button:SetAttribute("*type3", NO_ACTION)
     button:SetAttribute("alt-type1", NO_ACTION)
+    button:SetAttribute("shift-type1", NO_ACTION)
     button:SetAttribute("macrotext", button.record.active.text)
     button:Hide()
     CreateArt(button)
@@ -335,6 +366,7 @@ local function Create()
     CreateHeader()
     for _, potionType in ipairs(Catalog.types) do
         CreateButton(potionType)
+        CreateKeyButton(potionType)
     end
 end
 
@@ -417,7 +449,9 @@ end
 local function ApplyTexts()
     if not holder or InCombatLockdown() then return end
     for key, button in pairs(buttons) do
-        button:SetAttribute("macrotext", Picker.records[key].active.text)
+        local text = Picker.records[key].active.text
+        button:SetAttribute("macrotext", text)
+        keyButtons[key]:SetAttribute("macrotext", text)
     end
 end
 

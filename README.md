@@ -10,7 +10,7 @@ Keeps your health, mana and Free Action Potions in one place in WoW Forever: one
 
 A small panel with a health potion button and, for classes with mana, a mana potion button. Free Action Potions are off by default: switch them on on the Potions tab to get a third button. Each button shows the potion it will drink, the shared potion cooldown and how many potions you keep (amber below your stock, red at 0).
 
-A click drinks the strongest potion in your bags that your level allows. Hover a button for the full list of potions in your bags.
+A click drinks the strongest potion in your bags that your level allows. Hover a button for the potion's tooltip, with your stock and the potions in your bags added under it.
 
 The count is your stock: the potion you buy and stronger ones. By default that is the strongest potion sold for your level. With 2 Major and 3 Superior Healing Potions the button shows 2 in amber, and the auction house offers 3 Major. Weaker potions don't count, but they are drunk when nothing stronger is left.
 
@@ -21,7 +21,7 @@ The panel shows always (the default), only in combat, or never. Drag the title l
 ## Keys and macros
 
 - Bind a key to each potion type on the Potions tab or in the game's key bindings.
-- Drag a button from the panel onto an action bar and you get a macro (RePotion Health, RePotion Mana, RePotion Action) that follows every choice the addon makes and shows the potion, its count and cooldown like a normal action button. The Potions tab has a **Pick up** button for each of these macros.
+- Shift-drag a button from the panel onto an action bar and you get a macro (RePotion Health, RePotion Mana, RePotion Action) that follows every choice the addon makes and shows the potion, its count and cooldown like a normal action button. The Potions tab has a **Pick up** button for each of these macros.
 
 The macros are made per character when you first drag them. If all 30 character macro slots are taken, an account macro is used.
 
