@@ -12,7 +12,11 @@ local Picker = ns.Picker
 local Bar = { buttons = {} }
 ns.Bar = Bar
 
-local BUTTON_NAMES = { health = "RePotionHealthButton", mana = "RePotionManaButton" }
+local BUTTON_NAMES = {
+    health = "RePotionHealthButton",
+    mana = "RePotionManaButton",
+    freeAction = "RePotionFreeActionButton",
+}
 local PAD = 4
 local HEADER_HEIGHT, HEADER_GAP = 14, 5
 local HEADER_GLYPH_HEIGHT, HEADER_GLYPH_GAP = 11, 5
@@ -57,7 +61,9 @@ local function AddPair(left, right, color)
 end
 
 local function Describe(potion)
-    return string.format(L.POTION_WITH_RANGE, Catalog.Name(potion), Catalog.Range(potion))
+    local range = Catalog.Range(potion)
+    if not range then return Catalog.Name(potion) end
+    return string.format(L.POTION_WITH_RANGE, Catalog.Name(potion), range)
 end
 
 local function AddPickLines(record)
@@ -90,7 +96,7 @@ local function AddStockLines(potionType)
     local grade = Inventory.StockPotion(potionType)
     local have, bank = Inventory.StockCount(potionType, grade)
     AddLine(string.format(L.TIP_STOCK, have, Inventory.StockTarget(potionType)), have > 0 and C.muted or C.bad)
-    if grade then AddLine(string.format(L.TIP_STOCK_FROM, Catalog.Name(grade)), C.muted) end
+    if grade and potionType.graded then AddLine(string.format(L.TIP_STOCK_FROM, Catalog.Name(grade)), C.muted) end
     if bank > 0 then AddLine(string.format(L.TIP_IN_BANK, bank), C.muted) end
 end
 

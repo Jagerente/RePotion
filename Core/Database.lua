@@ -9,6 +9,7 @@ local DEFAULTS = {
     healthStock = 5,
     manaFloor = 20,
     manaStock = 5,
+    freeActionStock = 5,
     countBank = true,
     auction = true,
     priceStep = 20,

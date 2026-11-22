@@ -23,7 +23,14 @@ local SLIDER_GAP = 8
 local PARAGRAPH_GAP = 4
 local FLOOR_MAX = 60
 local STOCK_MAX = 20
-local BUTTON_ROW_HEIGHT, BUTTON_GAP = 22, 8
+local TYPE_GAP = 14
+local TYPE_HEAD_HEIGHT, TYPE_ICON_SIZE, TYPE_TEXT_GAP = 36, 30, 10
+local FORM_INDENT = TYPE_ICON_SIZE + TYPE_TEXT_GAP
+local FORM_ROW_HEIGHT, FORM_TOP_GAP, FORM_LABEL_GAP = 26, 4, 8
+local FORM_SLIDER_WIDTH = 180
+local ICON_BACK = { 0, 0, 0, 0.7 }
+local ICON_CROP = 0.08
+local LOCKED_SWITCH_ALPHA = 0.5
 local ICON_SIZE_MIN, ICON_SIZE_MAX = 24, 64
 local SPACING_MAX = 16
 local RESET_CONFIRM_SECONDS = 3
@@ -119,67 +126,182 @@ local function IsCurrent(page)
     return window and window:IsShown() and currentPage == page
 end
 
-local function AddTypeToggle(page, potionType)
-    return page.stack:Add(Track(page, W.Toggle(page.content, PAGE_WIDTH, {
-        label = "TRACK_" .. potionType.key,
-        desc = "TRACK_" .. potionType.key .. "_DESC",
-        get = function() return Catalog.IsEnabled(potionType) end,
-        set = function(value) Catalog.SetEnabled(potionType, value) end,
-        locked = function() return not Catalog.HasPool(potionType) end,
-        lockedDesc = "NO_MANA_DESC",
-        lockedState = false,
-    })))
-end
-
-local function NowText(potionType)
-    local active = ns.Picker.records[potionType.key].active
-    local text = active.main and string.format(L.NOW_CLICK, Catalog.Name(active.main)) or L.NOW_NONE
-    local grade = ns.Inventory.StockPotion(potionType)
-    if grade then text = text .. "\n" .. string.format(L.NOW_STOCK, Catalog.Name(grade)) end
-    local floor = math.floor(Catalog.EffectiveFloor(potionType, UnitLevel("player")))
-    if floor > 0 then text = text .. "\n" .. string.format(L["NOW_FLOOR_" .. potionType.key], floor) end
-    return text
-end
-
-local function AddNowLine(page, potionType)
-    return AddLiveText(page, function() return NowText(potionType) end, C.muted, PARAGRAPH_GAP)
-end
-
 local function FormatPercent(value)
     return string.format("%d%%", value)
 end
 
-local function AddTypeSection(page, potionType)
-    AddHeading(page, "SECTION_" .. potionType.key)
-    AddTypeToggle(page, potionType)
-    AddNowLine(page, potionType)
-    AddSlider(page, potionType.floorKey, "FLOOR_" .. potionType.key, 0, FLOOR_MAX, FormatPercent, SECTION_GAP)
-    AddSlider(page, potionType.stockKey, "STOCK", 0, STOCK_MAX)
+local function ShowText(owner, text)
+    if not text then return end
+    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+    GameTooltip:SetText(text, 1, 1, 1, 1, true)
+    GameTooltip:Show()
 end
 
-local function AddMacroButtons(page)
-    local row = CreateFrame("Frame", nil, page.content)
-    row:SetSize(PAGE_WIDTH, BUTTON_ROW_HEIGHT)
-    local previous
-    for _, potionType in ipairs(Catalog.types) do
-        local button = W.Button(row, "MACRO_" .. potionType.key, function() ns.Macros.Pickup(potionType) end)
-        button:SetPoint("LEFT", previous or row, previous and "RIGHT" or "LEFT", previous and BUTTON_GAP or 0, 0)
-        button:HookScript("OnEnter", function(self) W.ShowHint(self, "MACRO_BUTTON_DESC") end)
-        button:HookScript("OnLeave", W.HideHint)
-        previous = button
+local function ActivePotion(potionType)
+    return ns.Picker.records[potionType.key].active.main
+end
+
+local function HeadPotion(potionType)
+    return ns.Picker.Shown(ns.Picker.records[potionType.key]) or potionType.potions[#potionType.potions]
+end
+
+local function TypeStatus(potionType)
+    if not Catalog.HasPool(potionType) then return L.NO_MANA, C.muted end
+    local active = ActivePotion(potionType)
+    if active then return Catalog.Name(active), C.muted end
+    return L.NONE_IN_BAGS, C.bad
+end
+
+local function IsOpen(potionType)
+    return Catalog.HasPool(potionType) and Catalog.IsEnabled(potionType)
+end
+
+local function StockHint(potionType)
+    local grade = potionType.graded and ns.Inventory.StockPotion(potionType)
+    return grade and string.format(L.STOCK_COUNTS, Catalog.Name(grade)) or nil
+end
+
+local function FloorHint(potionType)
+    local floor = math.floor(Catalog.EffectiveFloor(potionType, UnitLevel("player")))
+    return string.format(L["FLOOR_DESC_" .. potionType.key], floor)
+end
+
+local function CreateHead(block)
+    local potionType = block.type
+    local head = CreateFrame("Button", nil, block)
+    head:SetPoint("TOPLEFT")
+    head:SetPoint("TOPRIGHT")
+    head:SetHeight(TYPE_HEAD_HEIGHT)
+    W.RowHover(head)
+    local back = head:CreateTexture(nil, "ARTWORK")
+    back:SetColorTexture(unpack(ICON_BACK))
+    back:SetSize(TYPE_ICON_SIZE, TYPE_ICON_SIZE)
+    back:SetPoint("LEFT")
+    block.icon = head:CreateTexture(nil, "OVERLAY")
+    block.icon:SetPoint("TOPLEFT", back, 1, -1)
+    block.icon:SetPoint("BOTTOMRIGHT", back, -1, 1)
+    block.icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
+    block.switch = W.CreateSwitch(head)
+    block.switch:SetPoint("RIGHT")
+    block.name = UI.BoldText(head, T.body, C.text)
+    block.name:SetPoint("TOPLEFT", back, "TOPRIGHT", TYPE_TEXT_GAP, 0)
+    block.name:SetPoint("RIGHT", block.switch, "LEFT", -TYPE_TEXT_GAP, 0)
+    block.name:SetJustifyH("LEFT")
+    block.status = UI.Text(head, T.label, C.muted)
+    block.status:SetPoint("BOTTOMLEFT", back, "BOTTOMRIGHT", TYPE_TEXT_GAP, 0)
+    block.status:SetPoint("RIGHT", block.switch, "LEFT", -TYPE_TEXT_GAP, 0)
+    block.status:SetJustifyH("LEFT")
+    head:SetScript("OnClick", function()
+        if not Catalog.HasPool(potionType) then return end
+        Catalog.SetEnabled(potionType, not Catalog.IsEnabled(potionType))
+    end)
+    head:HookScript("OnEnter", function(self)
+        W.SetSwitchHover(block.switch, Catalog.HasPool(potionType))
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetItemByID(HeadPotion(potionType).item)
+        GameTooltip:Show()
+    end)
+    head:HookScript("OnLeave", function(self)
+        W.SetSwitchHover(block.switch, false)
+        W.HideHint(self)
+    end)
+end
+
+local function PaintHead(block, animate)
+    local potionType = block.type
+    local open = IsOpen(potionType)
+    block.icon:SetTexture(Catalog.Icon(HeadPotion(potionType)))
+    block.icon:SetDesaturated(not open or ActivePotion(potionType) == nil)
+    block.name:SetText(L["SECTION_" .. potionType.key])
+    block.name:SetTextColor(unpack(open and C.text or C.muted))
+    local status, color = TypeStatus(potionType)
+    block.status:SetText(status)
+    block.status:SetTextColor(unpack(open and color or C.muted))
+    block.switch:SetAlpha(Catalog.HasPool(potionType) and 1 or LOCKED_SWITCH_ALPHA)
+    W.SetSwitch(block.switch, open, animate)
+end
+
+local function AddFormRow(block, labelKey, hint)
+    local row = CreateFrame("Frame", nil, block)
+    row:SetSize(PAGE_WIDTH - FORM_INDENT, FORM_ROW_HEIGHT)
+    row:EnableMouse(true)
+    row.label = UI.Text(row, T.label, C.muted)
+    row.label:SetPoint("LEFT")
+    row.label:SetJustifyH("LEFT")
+    W.Bind(row.label, labelKey)
+    if hint then
+        row:SetScript("OnEnter", function(self) ShowText(self, hint(block.type)) end)
+        row:SetScript("OnLeave", W.HideHint)
     end
-    page.stack:Add(row, 8)
+    block.rows[#block.rows + 1] = row
+    return row
+end
+
+local function Attach(row, control)
+    control:SetPoint("RIGHT")
+    row.label:SetPoint("RIGHT", control, "LEFT", -FORM_LABEL_GAP, 0)
+    row.control = control
+    return control
+end
+
+local function AddSliderRow(block, labelKey, key, max, format, hint)
+    local row = AddFormRow(block, labelKey, hint)
+    local get, set = Setting(key)
+    Attach(row, W.Slider(row, FORM_SLIDER_WIDTH, { min = 0, max = max, step = 1, get = get, set = set, format = format }))
+end
+
+local function AddKeyRow(block)
+    local row = AddFormRow(block, "KEY_ROW")
+    Attach(row, W.KeyBind(row, { desc = "KEY_DESC", binding = ns.Bar.Binding(block.type) }))
+end
+
+local function AddMacroRow(block)
+    local row = AddFormRow(block, "MACRO_ROW")
+    local button = W.Button(row, "MACRO_PICKUP", function() ns.Macros.Pickup(block.type) end, nil, W.KEY_BUTTON_WIDTH)
+    button:HookScript("OnEnter", function(self) W.ShowHint(self, "MACRO_BUTTON_DESC") end)
+    button:HookScript("OnLeave", W.HideHint)
+    Attach(row, button)
+end
+
+local function LayoutBlock(block, animate)
+    PaintHead(block, animate)
+    local open = IsOpen(block.type)
+    local y = TYPE_HEAD_HEIGHT
+    for index, row in ipairs(block.rows) do
+        row:SetShown(open)
+        if open then
+            y = y + (index == 1 and FORM_TOP_GAP or 0)
+            row:ClearAllPoints()
+            row:SetPoint("TOPLEFT", FORM_INDENT, -y)
+            if row.control.Refresh then row.control:Refresh() end
+            y = y + FORM_ROW_HEIGHT
+        end
+    end
+    block:SetHeight(y)
+end
+
+local function AddTypeBlock(page, potionType, gap)
+    local block = CreateFrame("Frame", nil, page.content)
+    block:SetWidth(PAGE_WIDTH)
+    block.type = potionType
+    block.rows = {}
+    CreateHead(block)
+    AddSliderRow(block, "STOCK_ROW", potionType.stockKey, STOCK_MAX, nil, StockHint)
+    if potionType.floorKey then
+        AddSliderRow(block, "FLOOR_ROW", potionType.floorKey, FLOOR_MAX, FormatPercent, FloorHint)
+    end
+    AddKeyRow(block)
+    AddMacroRow(block)
+    block.Refresh = LayoutBlock
+    LayoutBlock(block, false)
+    page.stack:Add(Track(page, block), gap)
 end
 
 local function BuildPotions()
     local page = NewPage("potions")
-    for _, potionType in ipairs(Catalog.types) do
-        AddTypeSection(page, potionType)
+    for index, potionType in ipairs(Catalog.types) do
+        AddTypeBlock(page, potionType, index > 1 and TYPE_GAP or 0)
     end
-    AddParagraph(page, "FLOOR_EXPLAIN", 8)
-    AddHeading(page, "SECTION_MACROS")
-    AddParagraph(page, "MACRO_EXPLAIN", 0)
-    AddMacroButtons(page)
 
     local function RefreshIfVisible()
         if IsCurrent(page) then RefreshPage(page, true) end
@@ -388,11 +510,6 @@ local function BuildGeneral()
     local page = NewPage("general")
     AddHeading(page, "SECTION_BEHAVIOR")
     AddToggle(page, "enabled", "ENABLE", "ENABLE_DESC")
-    for _, potionType in ipairs(Catalog.types) do
-        page.stack:Add(Track(page, W.KeyBind(page.content, PAGE_WIDTH, {
-            label = "KEY_" .. potionType.key, desc = "KEY_DESC", binding = ns.Bar.Binding(potionType),
-        })))
-    end
     page.stack:Add(Track(page, W.Toggle(page.content, PAGE_WIDTH, {
         label = "MINIMAP_BUTTON", desc = "MINIMAP_BUTTON_DESC",
         get = function() return not ns.db.minimap.hide end,

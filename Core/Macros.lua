@@ -5,7 +5,7 @@ ns.Macros = Macros
 
 local ICON = 134400
 local TOOLTIP_LINE = "#showtooltip"
-local NAMES = { health = "RePotion Health", mana = "RePotion Mana" }
+local NAMES = { health = "RePotion Health", mana = "RePotion Mana", freeAction = "RePotion Action" }
 local CHARACTER, ACCOUNT = true, false
 
 function Macros.Name(potionType)

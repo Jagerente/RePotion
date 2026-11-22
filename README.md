@@ -2,13 +2,13 @@
 
 # RePotion: Potion Tracker & Restock
 
-Keeps your health and mana potions in one place in WoW Forever: one button per potion type that drinks the strongest potion you have, a key and an action bar macro that do the same, and panels that restock potions from the auction house and the bank.
+Keeps your health, mana and Free Action Potions in one place in WoW Forever: one button per potion type that drinks the strongest potion you have, a key and an action bar macro that do the same, and panels that restock potions from the auction house and the bank.
 
 ![The potion panel with a health and a mana potion button, 5 of each in stock](https://raw.githubusercontent.com/Jagerente/RePotion/main/branding/screenshots/bar.png)
 
 ## The panel
 
-A small panel with a health potion button and, for classes with mana, a mana potion button. Each button shows the potion it will drink, the shared potion cooldown and how many potions you keep (amber below your stock, red at 0).
+A small panel with a health potion button and, for classes with mana, a mana potion button. Free Action Potions are off by default: switch them on on the Potions tab to get a third button. Each button shows the potion it will drink, the shared potion cooldown and how many potions you keep (amber below your stock, red at 0).
 
 A click drinks the strongest potion in your bags that your level allows. Hover a button for the full list of potions in your bags.
 
@@ -20,14 +20,14 @@ The panel shows always (the default), only in combat, or never. Drag the title l
 
 ## Keys and macros
 
-- Bind a key to each potion type on the General tab or in the game's key bindings.
-- Drag a button from the panel onto an action bar and you get a macro (RePotion Health, RePotion Mana) that follows every choice the addon makes and shows the potion, its count and cooldown like a normal action button. The Potions tab has buttons that pick up the same macros.
+- Bind a key to each potion type on the Potions tab or in the game's key bindings.
+- Drag a button from the panel onto an action bar and you get a macro (RePotion Health, RePotion Mana, RePotion Action) that follows every choice the addon makes and shows the potion, its count and cooldown like a normal action button. The Potions tab has a **Pick up** button for each of these macros.
 
 The macros are made per character when you first drag them. If all 30 character macro slots are taken, an account macro is used.
 
 ## Auction house
 
-When you open the auction house, a panel next to it lists the potions you are short of, up to the stock you keep (5 health and 5 mana potions by default, adjustable). Potions in the bank count toward it; switch off "Count potions in the bank" right in the panel to buy the full stock for your bags.
+When you open the auction house, a panel next to it lists the potions you are short of, up to the stock you keep (5 of each potion type by default, adjustable). Potions in the bank count toward it; switch off "Count potions in the bank" right in the panel to buy the full stock for your bags.
 
 - The strongest potion on sale is chosen by default. Under each row every potion you can use is listed with how much it restores and its price per potion; click another one to buy it instead. Your pick is remembered, and the stock then counts that potion and stronger ones: with Superior picked, 2 Major and 3 Superior are 5 of 5 and the row says **Enough**. Click the top potion to go back to the strongest.
 - Potions that restore less than 20% of your max health or mana (adjustable per type) aren't listed. A level 60 warrior with 4000 health sees Superior and Major Healing Potions, not Healing Potions.
@@ -48,11 +48,11 @@ Both panels sit to the right of their window and follow it, also when a bag addo
 
 `/potions` (or `/repotion`) opens the settings:
 
-- **Potions:** which types to track on this character, the skip threshold, how many potions to keep, the macros
+- **Potions:** a block per potion type with the potion it drinks, a switch for this character, how many to keep, the skip threshold, the key and the macro
 - **Panel:** when it shows up, potions you are out of, icon size, spacing, row or column, the title line, the count, lock, the background of the panel and of the auction and bank panels
 - **Auction:** the auction house list, counting the bank, the price jump guard, where the panel sits
 - **Bank:** the bank panel, taking potions right away, where the panel sits
-- **General:** the potion keys, minimap button, language
+- **General:** minimap button, language
 
 ## Other Re addons
 

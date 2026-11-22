@@ -32,4 +32,8 @@ ns.POTIONS = {
         { item = 18841, spell = 17530, amount = 1200, low = 900, high = 1500, level = 41, market = false },
         { item = 13444, spell = 17531, amount = 1800, low = 1350, high = 2250, level = 49, market = true },
     },
+    freeAction = {
+        { item = 287976, spell = 6615, amount = 30, level = 1, market = false },
+        { item = 5634, spell = 6615, amount = 30, level = 20, market = true },
+    },
 }

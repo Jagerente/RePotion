@@ -5,17 +5,32 @@ ns.Catalog = Catalog
 
 local PERCENT = 100
 local NAME_DELAY = 0.2
-local TYPE_ORDER = { "health", "mana" }
+local TYPE_DEFS = {
+    { key = "health", pool = "health" },
+    { key = "mana", pool = "mana" },
+    { key = "freeAction", optIn = true },
+}
 local MANA = Enum.PowerType.Mana
 
 local UnitHealthMax, UnitPowerMax = UnitHealthMax, UnitPowerMax
 
-for index, key in ipairs(TYPE_ORDER) do
+local function IsGraded(potions)
+    for index = 2, #potions do
+        if potions[index].amount ~= potions[1].amount then return true end
+    end
+    return false
+end
+
+for index, def in ipairs(TYPE_DEFS) do
+    local key = def.key
     local potionType = {
         key = key,
         index = index,
+        pool = def.pool,
+        optIn = def.optIn,
         potions = ns.POTIONS[key],
-        floorKey = key .. "Floor",
+        graded = IsGraded(ns.POTIONS[key]),
+        floorKey = def.pool and key .. "Floor",
         stockKey = key .. "Stock",
     }
     for _, potion in ipairs(potionType.potions) do
@@ -28,7 +43,7 @@ end
 
 local SETTING_TYPES = {}
 for _, potionType in ipairs(Catalog.types) do
-    SETTING_TYPES[potionType.floorKey] = potionType
+    if potionType.floorKey then SETTING_TYPES[potionType.floorKey] = potionType end
     SETTING_TYPES[potionType.stockKey] = potionType
 end
 
@@ -38,9 +53,9 @@ end
 
 function Catalog.MaxPool(potionType)
     local value
-    if potionType.key == "health" then
+    if potionType.pool == "health" then
         value = UnitHealthMax("player")
-    else
+    elseif potionType.pool == "mana" then
         value = UnitPowerMax("player", MANA)
     end
     if value == nil or ns.IsSecret(value) then return nil end
@@ -48,14 +63,14 @@ function Catalog.MaxPool(potionType)
 end
 
 function Catalog.HasPool(potionType)
-    if potionType.key == "health" then return true end
+    if potionType.pool ~= "mana" then return true end
     local max = Catalog.MaxPool(potionType)
     return max == nil or max > 0
 end
 
 function Catalog.IsEnabled(potionType)
     local choice = ns.charDB.types[potionType.key]
-    if choice == nil then return Catalog.HasPool(potionType) end
+    if choice == nil then return not potionType.optIn and Catalog.HasPool(potionType) end
     return choice
 end
 
@@ -106,6 +121,7 @@ function Catalog.Icon(potion)
 end
 
 function Catalog.Range(potion)
+    if not potion.type.pool then return nil end
     if potion.low == potion.high then return tostring(potion.amount) end
     return string.format(ns.L.RANGE, potion.low, potion.high)
 end
