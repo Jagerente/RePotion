@@ -38,6 +38,7 @@ local PERCENT = 100
 local ICON_BACK = { 0, 0, 0, 0.7 }
 local STRATA = "MEDIUM"
 local NO_ACTION = "none"
+local DRAG_MODIFIERS = { "alt-", "shift-", "alt-shift-", "alt-ctrl-", "alt-ctrl-shift-", "ctrl-shift-" }
 local SHOW, HIDE = "show", "hide"
 local VISIBILITY_STATES = {
     always = SHOW,
@@ -118,8 +119,10 @@ end
 
 local function AddHintLines()
     AddGap()
-    AddRow(L.TIP_SHIFT_DRAG, L.TIP_TAKE_MACRO, C.accent, C.text)
-    if not ns.db.locked then AddRow(L.TIP_ALT_DRAG, L.TIP_MOVE, C.accent, C.text) end
+    if not InCombatLockdown() then
+        AddRow(L.TIP_SHIFT_DRAG, L.TIP_TAKE_MACRO, C.accent, C.text)
+        if not ns.db.locked then AddRow(L.TIP_ALT_DRAG, L.TIP_MOVE, C.accent, C.text) end
+    end
     AddRow(L.TIP_RIGHT_CLICK, L.TIP_SETTINGS, C.accent, C.text)
 end
 
@@ -276,14 +279,16 @@ local function CreateButton(potionType)
     local button = CreateFrame("Button", NAMES[potionType.key] .. PANEL_BUTTON, bar, "SecureActionButtonTemplate")
     button.type = potionType
     button.record = Picker.records[potionType.key]
+    button.UpdateTooltip = ShowTooltip
     button:RegisterForClicks("AnyUp")
     button:RegisterForDrag("LeftButton")
     button:SetAttribute("type", "macro")
     button:SetAttribute("useOnKeyDown", false)
     button:SetAttribute("*type2", NO_ACTION)
     button:SetAttribute("*type3", NO_ACTION)
-    button:SetAttribute("alt-type1", NO_ACTION)
-    button:SetAttribute("shift-type1", NO_ACTION)
+    for _, prefix in ipairs(DRAG_MODIFIERS) do
+        button:SetAttribute(prefix .. "type1", NO_ACTION)
+    end
     button:SetAttribute("macrotext", button.record.active.text)
     button:Hide()
     CreateArt(button)
