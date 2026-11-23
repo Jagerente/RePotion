@@ -8,6 +8,8 @@ local SidePanel = ns.SidePanel
 
 local Money, ShortMoney, AddLine = SidePanel.Money, SidePanel.ShortMoney, SidePanel.AddLine
 local HOSTS = { "AuctionHouseFrame" }
+local PRICE_UNKNOWN = "—"
+local FIND_ALL_MIN_ROWS = 2
 
 local panel
 
@@ -48,6 +50,7 @@ local function LotSize(entry)
 end
 
 local function ButtonText(entry, confirm)
+    if entry.status == Market.IDLE then return L.AH_FIND_PRICE end
     if confirm then return L.AH_CONFIRM end
     if entry.status == Market.ENOUGH then return L.AH_ENOUGH end
     return string.format(L.AH_BUY, LotSize(entry))
@@ -83,7 +86,7 @@ local function ShowChoiceTooltip(choice)
 end
 
 local function ChoicePrice(offer)
-    if offer.status == Market.IDLE then return "", C.muted end
+    if offer.status == Market.IDLE then return PRICE_UNKNOWN, C.muted end
     if not Market.IsSettled(offer) then return "…", C.muted end
     if offer.status ~= Market.READY then return L.AH_NONE_SHORT, C.muted end
     return ShortMoney(offer.unitCost), Market.IsRaised(offer) and C.warn or C.text
@@ -93,13 +96,21 @@ local function PaintChoice(choice, offer, chosen)
     local text, color = ChoicePrice(offer)
     choice.price:SetText(text)
     choice.price:SetTextColor(unpack(color))
-    local pending = offer.status == Market.IDLE or not Market.IsSettled(offer)
-    choice:SetEnabled(OnSale(offer) and not Market.Busy(offer.entry))
-    choice:SetAlpha((OnSale(offer) or pending or chosen) and 1 or SidePanel.DISABLED_ALPHA)
+    local available = Market.IsAvailable(offer)
+    choice:SetEnabled(available and not Market.Busy(offer.entry))
+    choice:SetAlpha((available or chosen) and 1 or SidePanel.DISABLED_ALPHA)
+end
+
+local function OnRowButton(entry)
+    if entry.status == Market.IDLE then
+        Market.FindPrices(entry)
+    else
+        Market.Buy(entry)
+    end
 end
 
 local function CreateRow(owner)
-    local row = SidePanel.NewRow(owner, Market.Buy, ShownItem)
+    local row = SidePanel.NewRow(owner, OnRowButton, ShownItem)
     SidePanel.CreateChoices(row, Market.Pick, ShowChoiceTooltip)
     return row
 end
@@ -123,19 +134,21 @@ local function PaintRow(row, fresh)
 
     row.button.text:SetText(ButtonText(entry, confirm))
     row.button:SetStyle(confirm and "primary" or "default")
-    SidePanel.SetEnabled(row.button, status == Market.READY or confirm)
+    SidePanel.SetEnabled(row.button, status == Market.IDLE or status == Market.READY or confirm)
     row:SetHeight(SidePanel.HEAD_HEIGHT + SidePanel.PaintChoices(row, fresh, PaintChoice))
 end
 
 local function Paint()
     panel.subtitle:SetText(L.AH_SUBTITLE)
+    local waiting, known = Market.PriceCounts()
+    local offerAll = waiting >= FIND_ALL_MIN_ROWS
+    panel:SetFooterShown(offerAll or known > 0)
     panel:PaintRows(Market.entries, CreateRow, PaintRow)
-    local hasRows = #Market.entries > 0
     panel.footerText:SetText(string.format(L.AH_TOTAL, Money(Market.Total())))
-    panel.footerText:SetShown(hasRows and Market.priced)
+    panel.footerText:SetShown(known > 0)
     panel:SetAction(L.AH_FIND_PRICES, true)
-    panel.action:SetShown(hasRows and not Market.priced)
-    panel.refresh:SetShown(hasRows and Market.priced)
+    panel.action:SetShown(offerAll)
+    panel.refresh:SetShown(known > 0)
 end
 
 local function Create()
@@ -143,7 +156,7 @@ local function Create()
         title = "AH_TITLE",
         empty = "AH_EMPTY",
         refresh = Market.Refresh,
-        onAction = Market.FindPrices,
+        onAction = function() Market.FindPrices() end,
         toggles = { { key = "countBank", label = "COUNT_BANK", desc = "COUNT_BANK_DESC" } },
         hosts = HOSTS,
         slot = "auction",
