@@ -113,7 +113,7 @@ function Catalog.IsOffered(potion, level, floor)
 end
 
 function Catalog.Name(potion)
-    return C_Item.GetItemNameByID(potion.item) or string.format(ns.L.POTION_LOADING, potion.item)
+    return C_Item.GetItemNameByID(potion.item) or string.format(ns.L.ITEM_LOADING, potion.item)
 end
 
 function Catalog.Icon(potion)

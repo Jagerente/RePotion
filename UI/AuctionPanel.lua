@@ -71,7 +71,7 @@ local function ShowChoiceTooltip(choice)
     elseif not OnSale(offer) then
         AddLine(L.AH_NONE, C.bad)
     else
-        AddLine(string.format(L.AH_PER_POTION, Money(offer.unitCost)), C.text)
+        AddLine(string.format(L.AH_PER_ITEM, Money(offer.unitCost)), C.text)
         if offer.quantity > 0 then
             AddLine(string.format(L.AH_TIP_TOTAL, offer.quantity, Money(offer.cost)), C.muted)
         else

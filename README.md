@@ -2,7 +2,7 @@
 
 # RePotion: Potion Tracker & Restock
 
-Keeps your health, mana and Free Action Potions in one place in WoW Forever: one button per potion type that drinks the strongest potion you have, a key and an action bar macro that do the same, and panels that restock potions from the auction house and the bank.
+Keeps your health, mana and Free Action Potions in one place in WoW Forever: one button per potion type that drinks the strongest potion you have, a key and an action bar macro that do the same, and panels that restock potions at the auction house and the bank.
 
 ![The potion panel with a health and a mana potion button, 5 of each in stock](https://raw.githubusercontent.com/Jagerente/RePotion/main/branding/screenshots/bar.png)
 
@@ -23,24 +23,24 @@ The panel shows always (the default), only in combat, or never. Drag the title l
 - Bind a key to each potion type on the Potions tab or in the game's key bindings.
 - Shift-drag a button from the panel onto an action bar and you get a macro (RePotion Health, RePotion Mana, RePotion Action) that follows every choice the addon makes and shows the potion, its count and cooldown like a normal action button. The Potions tab has a **Pick up** button for each of these macros.
 
-The macros are made per character when you first drag them. If all 30 character macro slots are taken, an account macro is used.
+The macros are made per character when you first take them. If all 30 character macro slots are taken, an account macro is used.
 
 ## Auction house
 
-When you open the auction house, a panel next to it lists the potions you are short of, up to the stock you keep (5 of each potion type by default, adjustable). Potions in the bank count toward it; switch off "Count potions in the bank" right in the panel to buy the full stock for your bags. The panel asks for prices only when you press **Find prices**, so opening the auction house to sell things doesn't slow it down.
+When you open the auction house, a panel next to it lists the potions you are short of, up to the stock you keep (5 of each potion type by default, adjustable). Potions in the bank count toward it; switch off "Count potions in the bank" on the panel or on the Auction tab to buy the full stock for your bags. The panel asks for prices only when you press **Find prices**, so opening the auction house to sell things doesn't slow it down.
 
 - The strongest potion on sale is chosen by default. Under each row every potion you can use is listed with how much it restores and its price per potion; click another one to buy it instead. Your pick is remembered, and the stock then counts that potion and stronger ones: with Superior picked, 2 Major and 3 Superior are 5 of 5 and the row says **Enough**. Click the top potion to go back to the strongest.
 - Potions that restore less than 20% of your max health or mana (adjustable per type) aren't listed. A level 60 warrior with 4000 health sees Superior and Major Healing Potions, not Healing Potions.
-- **Price jump guard.** A purchase takes only potions priced at most 20% (adjustable) above the cheapest one. If 4 potions cost 15s and the fifth costs 1g, the panel buys 4 and tells you the rest is dearer.
-- **Buy N** buys that potion in one click. If the price went up since the lookup, the row asks you to confirm the new price.
+- The **Price jump guard** takes only potions priced at most 20% (adjustable) above the cheapest one. If 4 potions cost 15s and the fifth costs 1g, the panel buys 4 and tells you the rest is dearer.
+- **Buy N** buys that potion. If the price went up since the lookup, the row asks you to confirm the new price.
 
 ![The restock panel next to the auction house with the potions to pick from under each row](https://raw.githubusercontent.com/Jagerente/RePotion/main/branding/screenshots/auction.png)
 
 ## Bank
 
-When you open the bank, a panel next to it lists the potions your bags are short of. **Take all** moves the potions the stock counts into your bags, the strongest first, splitting stacks so you get exactly the stock. Turn on "Take them right away" to skip the click.
+When you open the bank, a panel next to it lists the potions your bags are short of. **Take all** moves the potions the stock counts into your bags, the strongest first, splitting stacks so you get exactly the stock. Turn on "Take when the bank opens" to skip the click.
 
-Both panels sit to the right of their window and follow it, also when a bag addon replaces the bank window. On the Auction and Bank tabs you can put the panel to the right, left, below or above the window. Drag a panel to move it; right-click it to open its settings, middle-click to put it back.
+Both panels sit to the right of their window and follow it, also when a bag addon replaces the bank window. They share the space with the panels of the other Re addons. On the Auction and Bank tabs you can attach the panel to the window or to another addon's panel, to the right, left, below or above. Drag a panel to move it; right-click it to open or close its settings, middle-click to put it back.
 
 ![The bank panel with potions to take into your bags](https://raw.githubusercontent.com/Jagerente/RePotion/main/branding/screenshots/bank.png)
 
@@ -48,17 +48,17 @@ Both panels sit to the right of their window and follow it, also when a bag addo
 
 `/potions` (or `/repotion`) opens the settings:
 
-- **Potions:** a block per potion type with the potion it drinks, a switch for this character, how many to keep, the skip threshold, the key and the macro
-- **Panel:** when it shows up, potions you are out of, icon size, spacing, row or column, the title line, the count, lock, the background of the panel and of the auction and bank panels
-- **Auction:** the auction house list, counting the bank, the price jump guard, where the panel sits
-- **Bank:** the bank panel, taking potions right away, where the panel sits
-- **General:** minimap button, language
+- The Potions tab has a block per potion type with the potion it drinks, a switch for this character, how many to keep, the skip threshold, the key and the macro.
+- The Panel tab sets when the panel shows up, potions you are out of, icon size, spacing, row or column, the title line, the count, the lock and the background of the panel and of the auction and bank panels.
+- The Auction tab turns the auction house list on or off and sets counting the bank, the price jump guard and where the panel sits.
+- The Bank tab turns the bank panel on or off and sets taking potions when the bank opens and where the panel sits.
+- The General tab has the panel switch, the minimap button and the language.
 
 ## Other Re addons
 
-Panels like this one for the other things you carry, with the same restock at the auction house and the bank:
+Panels like this one for the other things you carry:
 
-- [ReScroll](https://www.curseforge.com/projects/1812247) shows which scroll buffs you are missing, applies them with one button and restocks scrolls ([GitHub](https://github.com/Jagerente/ReScroll)).
-- [ReFood](https://www.curseforge.com/projects/1816338) eats and drinks the strongest food you carry, reminds you of Well Fed and restocks food at the vendor ([GitHub](https://github.com/Jagerente/ReFood)).
-- [ReReagent](https://www.curseforge.com/projects/1816458) counts the reagents your class spells use and restocks them at the vendor and from the bank ([GitHub](https://github.com/Jagerente/ReReagent)).
-- [ReWeapon](https://www.curseforge.com/projects/1816469) puts sharpening stones, oils and poisons on your weapons with one button per hand and restocks them ([GitHub](https://github.com/Jagerente/ReWeapon)).
+- [ReScroll](https://www.curseforge.com/projects/1812247) shows which scroll buffs you are missing, applies them with one button and restocks scrolls at the auction house and the bank ([GitHub](https://github.com/Jagerente/ReScroll)).
+- [ReFood](https://www.curseforge.com/projects/1816338) eats and drinks the strongest food you carry, reminds you of Well Fed and restocks food at the vendor, the auction house and the bank ([GitHub](https://github.com/Jagerente/ReFood)).
+- [ReReagent](https://www.curseforge.com/projects/1816458) counts the reagents your class spells use and restocks them at the vendor and the bank ([GitHub](https://github.com/Jagerente/ReReagent)).
+- [ReWeapon](https://www.curseforge.com/projects/1816469) puts sharpening stones, oils and poisons on your weapons with one button per hand and restocks them at the vendor, the auction house and the bank ([GitHub](https://github.com/Jagerente/ReWeapon)).
