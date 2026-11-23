@@ -21,6 +21,7 @@ local KEY_BUTTON, PANEL_BUTTON = "Button", "PanelButton"
 local TIP_GLYPH_HEIGHT = 14
 local TIP_GLYPH = UI.InlineGlyph(TIP_GLYPH_HEIGHT)
 local TIP_GAP = " "
+local TIP_LIST_MIN_KINDS = 2
 local PAD = 4
 local HEADER_HEIGHT, HEADER_GAP = 14, 5
 local HEADER_GLYPH_HEIGHT, HEADER_GLYPH_GAP = 11, 5
@@ -57,10 +58,10 @@ function Bar.Binding(potionType)
     return "CLICK " .. NAMES[potionType.key] .. KEY_BUTTON .. ":LeftButton"
 end
 
-local function CountColor(potionType, kept)
+local function CountColor(potionType, kept, fullColor)
     if kept == 0 then return C.bad end
     if kept < Inventory.StockTarget(potionType) then return C.warn end
-    return C.text
+    return fullColor or C.text
 end
 
 local function AddLine(text, color)
@@ -78,55 +79,54 @@ end
 local function Describe(potion)
     local range = Catalog.Range(potion)
     if not range then return Catalog.Name(potion) end
-    return string.format(L.POTION_WITH_RANGE, Catalog.Name(potion), range)
+    return Catalog.Name(potion) .. " " .. UI.Colored(range, C.faint)
 end
 
 local function AddHeader(potionType)
     AddGap()
-    AddRow(TIP_GLYPH .. " " .. ns.TITLE, Catalog.TypeName(potionType), C.accent, C.muted)
+    AddRow(TIP_GLYPH .. " " .. ns.TITLE, Catalog.TypeName(potionType), C.accent, C.text)
 end
 
-local function AddStatusLines(record)
-    local active = record.active
-    if not active.main then
-        AddLine(L.TIP_NONE, C.bad)
-    elseif active.fallback then
-        AddRow(L.TIP_FALLBACK, Catalog.Name(active.fallback), C.muted, C.text)
-    end
+local function StockText(potionType, have)
+    local count = UI.Colored(have, CountColor(potionType, have, C.good))
+    return string.format(L.TIP_STOCK_VALUE, count, Inventory.StockTarget(potionType))
+end
+
+local function AddStockLines(record, grade)
+    local potionType, active = record.type, record.active
+    local have, bank = Inventory.StockCount(potionType, grade)
+    AddRow(L.TIP_STOCK, StockText(potionType, have), C.muted, C.muted)
+    if bank > 0 then AddRow(L.TIP_IN_BANK, bank, C.muted, C.text) end
+    if active.fallback then AddRow(L.TIP_FALLBACK, Catalog.Name(active.fallback), C.muted, C.text) end
     if InCombatLockdown() and record.text ~= active.text then AddLine(L.TIP_AFTER_COMBAT, C.warn) end
 end
 
 local function AddBagLines(record, grade)
     local owned = record.owned
-    if #owned < 2 then return end
+    local listed = #owned >= TIP_LIST_MIN_KINDS
+    if listed then AddGap() end
+    if grade and record.type.graded then
+        AddLine(string.format(L.TIP_STOCK_FROM, UI.Colored(Catalog.Name(grade), C.text)), C.faint)
+    end
+    if not listed then return end
     for index = #owned, 1, -1 do
         local potion = owned[index]
-        local color = Inventory.Counts(potion, grade) and C.text or C.muted
+        local color = Inventory.Counts(potion, grade) and C.text or C.faint
         AddRow(Describe(potion), string.format(L.COUNT, Inventory.Count(potion.item)), color, color)
     end
 end
 
-local function AddStockLines(record)
-    local potionType = record.type
-    local grade = Inventory.StockPotion(potionType)
-    local have, bank = Inventory.StockCount(potionType, grade)
-    AddGap()
-    AddRow(L.TIP_STOCK, string.format(L.TIP_STOCK_VALUE, have, Inventory.StockTarget(potionType)), C.muted, CountColor(potionType, have))
-    if bank > 0 then AddRow(L.TIP_IN_BANK, bank, C.muted, C.text) end
-    if grade and potionType.graded then AddLine(string.format(L.TIP_STOCK_FROM, Catalog.Name(grade)), C.muted) end
-    AddBagLines(record, grade)
-end
-
 local function AddHintLines()
     AddGap()
-    AddRow(L.TIP_SHIFT_DRAG, L.TIP_TAKE_MACRO, C.muted, C.muted)
-    if not ns.db.locked then AddRow(L.TIP_ALT_DRAG, L.TIP_MOVE, C.muted, C.muted) end
-    AddRow(L.TIP_RIGHT_CLICK, L.TIP_SETTINGS, C.muted, C.muted)
+    AddRow(L.TIP_SHIFT_DRAG, L.TIP_TAKE_MACRO, C.accent, C.text)
+    if not ns.db.locked then AddRow(L.TIP_ALT_DRAG, L.TIP_MOVE, C.accent, C.text) end
+    AddRow(L.TIP_RIGHT_CLICK, L.TIP_SETTINGS, C.accent, C.text)
 end
 
 local function ShowTooltip(button)
     local record = button.record
     local potion = Picker.Shown(record)
+    local grade = Inventory.StockPotion(button.type)
     GameTooltip:SetOwner(button, UI.VerticalAnchor(button))
     if potion then
         GameTooltip:SetItemByID(potion.item)
@@ -134,8 +134,8 @@ local function ShowTooltip(button)
         GameTooltip:SetText(Catalog.TypeName(button.type), C.text[1], C.text[2], C.text[3])
     end
     AddHeader(button.type)
-    AddStatusLines(record)
-    AddStockLines(record)
+    AddStockLines(record, grade)
+    AddBagLines(record, grade)
     AddHintLines()
     GameTooltip:Show()
 end

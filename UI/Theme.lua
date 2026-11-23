@@ -119,6 +119,17 @@ function UI.LerpColor(from, to, t, out)
     return out
 end
 
+local COLOR_CODE = "|cff%02x%02x%02x%s|r"
+local COLOR_BYTE = 255
+
+local function ColorByte(channel)
+    return math.floor(channel * COLOR_BYTE + 0.5)
+end
+
+function UI.Colored(text, color)
+    return string.format(COLOR_CODE, ColorByte(color[1]), ColorByte(color[2]), ColorByte(color[3]), text)
+end
+
 local function EaseOutCubic(t)
     local inv = 1 - t
     return 1 - inv * inv * inv
