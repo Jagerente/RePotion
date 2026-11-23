@@ -60,7 +60,6 @@ local function Create()
         title = "BANK_TITLE",
         empty = "BANK_DONE",
         onAction = function() Bank.Take() end,
-        actionHint = "BANK_TAKE_ALL_DESC",
         toggle = { key = "bankAuto", label = "BANK_AUTO", desc = "BANK_AUTO_DESC" },
         hosts = HOSTS,
         slot = "bank",

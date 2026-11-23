@@ -104,7 +104,6 @@ local function ShowChoiceTooltip(choice)
             AddLine(L.AH_TIP_ENOUGH, C.muted)
         end
         if offer.beyond then AddLine(string.format(L.AH_TIP_BEYOND, Money(offer.beyond)), C.warn) end
-        if offer.entry.offer ~= offer then AddLine(L.AH_TIP_PICK, C.accent) end
     end
     GameTooltip:Show()
 end

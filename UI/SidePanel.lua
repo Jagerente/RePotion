@@ -170,8 +170,6 @@ local function CreateFooter(panel, opts)
     if opts.onAction then
         panel.action = W.Button(panel, nil, opts.onAction, "primary")
         panel.action:SetPoint("BOTTOMRIGHT", -PAD, PAD)
-        panel.action:HookScript("OnEnter", function(self) W.ShowHint(self, opts.actionHint) end)
-        panel.action:HookScript("OnLeave", W.HideHint)
     end
     panel.footerText = UI.Text(panel, T.body, C.text)
     panel.footerText:SetPoint("LEFT", panel, "BOTTOMLEFT", PAD, PAD + BUTTON_HEIGHT / 2)

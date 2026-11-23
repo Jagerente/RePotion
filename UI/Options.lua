@@ -360,10 +360,6 @@ local function DockStatus(slot)
     return text
 end
 
-local function DockFamily(slot)
-    return string.format(L.DOCK_EXPLAIN, table.concat(ns.Dock:Family(slot), ", "))
-end
-
 local function DockSides()
     local list = {}
     for index, side in ipairs(ns.Dock.SIDES) do
@@ -399,7 +395,6 @@ local function AddDockControls(page, slot)
         paintStatus(self)
     end
     status:Refresh()
-    AddLiveText(page, function() return DockFamily(slot) end, C.muted, PARAGRAPH_GAP)
 end
 
 ns.Dock:OnChange(function()
@@ -424,7 +419,6 @@ local function BuildAuction()
     AddDockControls(page, "auction")
     AddSlider(page, "auctionX", "OFFSET_X", -PANEL_OFFSET, PANEL_OFFSET)
     AddSlider(page, "auctionY", "OFFSET_Y", -PANEL_OFFSET, PANEL_OFFSET)
-    AddParagraph(page, "AUCTION_OFFSET_EXPLAIN", 6)
 end
 
 local function BuildBank()
@@ -437,7 +431,6 @@ local function BuildBank()
     AddDockControls(page, "bank")
     AddSlider(page, "bankX", "OFFSET_X", -PANEL_OFFSET, PANEL_OFFSET)
     AddSlider(page, "bankY", "OFFSET_Y", -PANEL_OFFSET, PANEL_OFFSET)
-    AddParagraph(page, "BANK_OFFSET_EXPLAIN", 6)
 end
 
 local VISIBILITY_MODES = {
@@ -470,7 +463,6 @@ local function BuildPanel()
     AddToggle(page, "showHeader", "SHOW_HEADER", "SHOW_HEADER_DESC")
     AddToggle(page, "showCounts", "SHOW_COUNTS", "SHOW_COUNTS_DESC")
     AddToggle(page, "locked", "LOCKED", "LOCKED_DESC")
-    AddParagraph(page, "MOVE_EXPLAIN", 6)
     AddRecenterButton(page)
 
     AddHeading(page, "SECTION_BACKGROUND")
@@ -511,7 +503,7 @@ local function BuildGeneral()
     AddHeading(page, "SECTION_BEHAVIOR")
     AddToggle(page, "enabled", "ENABLE", "ENABLE_DESC")
     page.stack:Add(Track(page, W.Toggle(page.content, PAGE_WIDTH, {
-        label = "MINIMAP_BUTTON", desc = "MINIMAP_BUTTON_DESC",
+        label = "MINIMAP_BUTTON",
         get = function() return not ns.db.minimap.hide end,
         set = ns.MinimapButton.SetShown,
     })))
