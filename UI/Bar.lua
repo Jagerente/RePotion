@@ -95,24 +95,27 @@ end
 
 local function AddStockLines(record, grade)
     local potionType, active = record.type, record.active
-    local have, bank = Inventory.StockCount(potionType, grade)
-    AddRow(L.TIP_STOCK, StockText(potionType, have), C.muted, C.muted)
-    if bank > 0 then AddRow(L.TIP_IN_BANK, bank, C.muted, C.text) end
+    if Inventory.StockTarget(potionType) > 0 then
+        local have, bank = Inventory.StockCount(potionType, grade)
+        AddRow(L.TIP_STOCK, StockText(potionType, have), C.muted, C.muted)
+        if bank > 0 then AddRow(L.TIP_IN_BANK, bank, C.muted, C.text) end
+    end
     if active.fallback then AddRow(L.TIP_FALLBACK, Catalog.Name(active.fallback), C.muted, C.text) end
     if InCombatLockdown() and record.text ~= active.text then AddLine(L.TIP_AFTER_COMBAT, C.warn) end
 end
 
 local function AddBagLines(record, grade)
     local owned = record.owned
+    local stocked = Inventory.StockTarget(record.type) > 0
     local listed = #owned >= TIP_LIST_MIN_KINDS
     if listed then AddGap() end
-    if grade and record.type.graded then
+    if stocked and grade and record.type.graded then
         AddLine(string.format(L.TIP_STOCK_FROM, UI.Colored(Catalog.Name(grade), C.text)), C.faint)
     end
     if not listed then return end
     for index = #owned, 1, -1 do
         local potion = owned[index]
-        local color = Inventory.Counts(potion, grade) and C.text or C.faint
+        local color = (not stocked or Inventory.Counts(potion, grade)) and C.text or C.faint
         AddRow(Describe(potion), string.format(L.COUNT, Inventory.Count(potion.item)), color, color)
     end
 end
@@ -153,17 +156,28 @@ local function PaintCooldown(button, potion)
     end
 end
 
+local function PaintCount(button, have)
+    local shown = ns.db.showCounts
+    button.count:SetShown(shown)
+    button.scrim:SetShown(shown)
+    if not shown then return end
+    if Inventory.StockTarget(button.type) == 0 then
+        button.count:SetText(have)
+        button.count:SetTextColor(unpack(have > 0 and C.text or C.bad))
+        return
+    end
+    local kept = Inventory.StockCount(button.type)
+    button.count:SetText(kept > 0 and kept or have)
+    button.count:SetTextColor(unpack(CountColor(button.type, kept)))
+end
+
 local function PaintButton(button)
     local potion = Picker.Shown(button.record)
     local have = potion and Inventory.Count(potion.item) or 0
-    local kept = Inventory.StockCount(button.type)
     button.icon:SetTexture(potion and Catalog.Icon(potion) or nil)
     button.icon:SetDesaturated(have == 0)
     button.art:SetAlpha(have == 0 and EMPTY_ALPHA or 1)
-    button.count:SetShown(ns.db.showCounts)
-    button.scrim:SetShown(ns.db.showCounts)
-    button.count:SetText(kept > 0 and kept or have)
-    button.count:SetTextColor(unpack(CountColor(button.type, kept)))
+    PaintCount(button, have)
     PaintCooldown(button, potion)
 end
 
@@ -198,6 +212,7 @@ end
 local function StartMoving()
     if ns.db.locked or InCombatLockdown() then return false end
     moving = true
+    GameTooltip:Hide()
     holder:Raise()
     holder:StartMoving()
 end
@@ -217,11 +232,10 @@ end
 
 local function StartAltMoving()
     if not IsAltKeyDown() then return false end
-    GameTooltip:Hide()
     return StartMoving()
 end
 
-local function OnPostClick(_, mouseButton)
+local function OnPanelMouseUp(_, mouseButton)
     if mouseButton == "RightButton" then
         ns.Options.Toggle()
     elseif mouseButton == "MiddleButton" and not ns.db.locked and not InCombatLockdown() then
@@ -239,7 +253,7 @@ local function CreateArt(button)
     button.icon:SetTexCoord(ICON_CROP, 1 - ICON_CROP, ICON_CROP, 1 - ICON_CROP)
 
     button.cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
-    button.cooldown:SetAllPoints(button.icon)
+    button.cooldown:SetAllPoints(button.art)
     button.cooldown:SetDrawEdge(false)
     button.cooldown:SetHideCountdownNumbers(true)
 
@@ -262,9 +276,9 @@ local function CreateArt(button)
 end
 
 local function SetPressed(button, pressed)
-    local inset = BORDER + (pressed and PRESS_INSET or 0)
-    button.icon:SetPoint("TOPLEFT", inset, -inset)
-    button.icon:SetPoint("BOTTOMRIGHT", -inset, inset)
+    local inset = pressed and PRESS_INSET or 0
+    button.art:SetPoint("TOPLEFT", inset, -inset)
+    button.art:SetPoint("BOTTOMRIGHT", -inset, inset)
 end
 
 local function CreateKeyButton(potionType)
@@ -293,7 +307,7 @@ local function CreateButton(potionType)
     button:Hide()
     CreateArt(button)
 
-    button:SetScript("PostClick", OnPostClick)
+    button:SetScript("PostClick", OnPanelMouseUp)
     button:SetScript("OnDragStart", OnDragStart)
     W.DragHandle(button, StartAltMoving, StopMoving)
     button:HookScript("OnEnter", function(self)
@@ -311,12 +325,9 @@ local function CreateButton(potionType)
     return button
 end
 
-local function OnHeaderMouseUp(_, mouseButton)
-    if mouseButton == "RightButton" then
-        ns.Options.Toggle()
-    elseif mouseButton == "MiddleButton" and not ns.db.locked and not InCombatLockdown() then
-        Bar.ResetPosition()
-    end
+local function HeaderHint()
+    if ns.db.locked then return "HEADER_LOCKED_DESC" end
+    return InCombatLockdown() and "HEADER_COMBAT_DESC" or "HEADER_DESC"
 end
 
 local function CreateHeader()
@@ -325,20 +336,14 @@ local function CreateHeader()
     header:SetPoint("TOPLEFT", PAD, -PAD)
     header:SetPoint("TOPRIGHT", -PAD, -PAD)
     header:EnableMouse(true)
-    Bar.header = header
     glyph = UI.AddonGlyph(header, HEADER_GLYPH_HEIGHT)
     glyph:SetPoint("LEFT")
     title = UI.BoldText(header, T.label, C.text)
     title:SetPoint("LEFT", glyph, "RIGHT", HEADER_GLYPH_GAP, 0)
-    header:SetScript("OnEnter", function(self)
-        W.ShowHint(self, ns.db.locked and "HEADER_LOCKED_DESC" or "HEADER_DESC")
-    end)
+    header:SetScript("OnEnter", function(self) W.ShowHint(self, HeaderHint()) end)
     header:SetScript("OnLeave", W.HideHint)
-    header:SetScript("OnMouseUp", OnHeaderMouseUp)
-    W.DragHandle(header, function()
-        if ns.db.locked or InCombatLockdown() then return false end
-        StartMoving()
-    end, StopMoving)
+    header:SetScript("OnMouseUp", OnPanelMouseUp)
+    W.DragHandle(header, StartMoving, StopMoving)
 end
 
 local function HeaderWidth()
@@ -445,10 +450,6 @@ function Bar.Refresh()
     Layout()
     ApplyVisibility()
     Paint()
-end
-
-function Bar.IsShown()
-    return holder ~= nil and holder:IsShown()
 end
 
 local function ApplyTexts()

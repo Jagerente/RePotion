@@ -158,7 +158,7 @@ end
 
 local function StockHint(potionType)
     local grade = potionType.graded and ns.Inventory.StockPotion(potionType)
-    return grade and string.format(L.STOCK_COUNTS, Catalog.Name(grade)) or nil
+    return grade and string.format(L.TIP_STOCK_FROM, Catalog.Name(grade)) or nil
 end
 
 local function FloorHint(potionType)
@@ -212,7 +212,7 @@ local function PaintHead(block, animate)
     local open = IsOpen(potionType)
     block.icon:SetTexture(Catalog.Icon(HeadPotion(potionType)))
     block.icon:SetDesaturated(not open or ActivePotion(potionType) == nil)
-    block.name:SetText(L["SECTION_" .. potionType.key])
+    block.name:SetText(Catalog.TypeName(potionType))
     block.name:SetTextColor(unpack(open and C.text or C.muted))
     local status, color = TypeStatus(potionType)
     block.status:SetText(status)
@@ -316,9 +316,7 @@ local AUTO = "auto"
 local DOCK_SIDE_GAP, DOCK_TEXT_GAP = 10, 8
 local DOCK_PAGES = { "auction", "bank" }
 
-local function DockPlacement(slot)
-    return ns.SidePanel.Placement(slot)
-end
+local DockPlacement = ns.SidePanel.Placement
 
 local function DockTargets(slot)
     local items = {

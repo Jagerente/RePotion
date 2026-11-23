@@ -29,6 +29,14 @@ local DISABLED_ALPHA = 0.4
 local FADE_TIME = 0.15
 local GOLD, SILVER = 10000, 100
 local HAIRLINE = { 1, 1, 1, 0.07 }
+local CHOICE_HEIGHT, CHOICES_TOP = 24, 6
+local MARK_WIDTH = 2
+local CHOICE_INSET = 8
+local PRICE_WIDTH, RANGE_WIDTH, COLUMN_GAP = 64, 70, 8
+local SLIDE_TIME = 0.18
+local SELECTED_FILL = { 0.243, 0.235, 0.220, 1 }
+local CHOICE_HOVER = { 1, 1, 1, 0.05 }
+local CLEAR = { 1, 1, 1, 0 }
 local PERCENT = 100
 local OPAQUE_WINDOW = { C.window[1], C.window[2], C.window[3], 1 }
 local COINS = {
@@ -37,11 +45,10 @@ local COINS = {
     { size = 1, key = "COIN_COPPER", color = "|cffd4895a" },
 }
 
-SidePanel.ROW_WIDTH = WIDTH - PAD * 2
-SidePanel.TEXT_INDENT = ICON_SIZE + 10
+local ROW_WIDTH = WIDTH - PAD * 2
+local TEXT_INDENT = ICON_SIZE + 10
 SidePanel.HEAD_HEIGHT = HEAD_HEIGHT
 SidePanel.DISABLED_ALPHA = DISABLED_ALPHA
-SidePanel.HAIRLINE = HAIRLINE
 
 local function Coin(amount, coin)
     return amount .. coin.color .. L[coin.key] .. "|r"
@@ -76,13 +83,17 @@ function SidePanel.SetEnabled(button, enabled)
     button:SetAlpha(enabled and 1 or DISABLED_ALPHA)
 end
 
+function SidePanel.AddLine(text, color)
+    GameTooltip:AddLine(text, color[1], color[2], color[3], true)
+end
+
 local backgrounds = {}
 
 local function BackgroundAlpha()
     return ns.db.panelBackground / PERCENT
 end
 
-function SidePanel.AddBackground(parent, color)
+local function AddBackground(parent, color)
     local fill = UI.Fill(parent, color)
     fill:SetAlpha(BackgroundAlpha())
     backgrounds[#backgrounds + 1] = fill
@@ -144,23 +155,24 @@ local function CreateHeader(panel, opts)
 
     panel.subtitle = UI.Text(panel, T.label, C.muted)
     panel.subtitle:SetPoint("TOPLEFT", PAD, -PAD - HEADER_HEIGHT)
-    panel.subtitle:SetWidth(SidePanel.ROW_WIDTH)
+    panel.subtitle:SetWidth(ROW_WIDTH)
     panel.subtitle:SetWordWrap(true)
     panel.subtitle:SetJustifyH("LEFT")
 end
 
-local function CreateToggle(panel, toggle)
+local function CreateToggle(panel, toggle, index)
     local key = toggle.key
-    panel.toggle = W.Toggle(panel, SidePanel.ROW_WIDTH, {
+    local row = W.Toggle(panel, ROW_WIDTH, {
         label = toggle.label,
         desc = toggle.desc,
         get = function() return ns.db[key] end,
         set = function(value) ns.Set(key, value) end,
     })
-    panel.toggle:SetPoint("TOPLEFT", panel.subtitle, "BOTTOMLEFT", 0, -TOGGLE_GAP)
+    row:SetPoint("TOPLEFT", panel.subtitle, "BOTTOMLEFT", 0, -TOGGLE_GAP - (index - 1) * TOGGLE_HEIGHT)
     ns.Listen("SETTING_CHANGED", function(changed)
-        if changed == nil or changed == key then panel.toggle:Refresh(panel:IsShown()) end
+        if changed == nil or changed == key then row:Refresh(panel:IsShown()) end
     end)
+    panel.toggles[index] = row
 end
 
 local function CreateFooter(panel, opts)
@@ -177,10 +189,10 @@ end
 
 local function CreateList(panel, opts)
     panel.list = CreateFrame("Frame", nil, panel)
-    panel.list:SetWidth(SidePanel.ROW_WIDTH)
+    panel.list:SetWidth(ROW_WIDTH)
     panel.emptyText = UI.Text(panel.list, T.body, C.muted)
     panel.emptyText:SetPoint("TOPLEFT")
-    panel.emptyText:SetWidth(SidePanel.ROW_WIDTH)
+    panel.emptyText:SetWidth(ROW_WIDTH)
     panel.emptyText:SetWordWrap(true)
     panel.emptyText:SetJustifyH("LEFT")
     panel.emptyText:SetSpacing(3)
@@ -200,10 +212,6 @@ function PanelMixin:Offset()
     return ns.db[offset.x], ns.db[offset.y]
 end
 
-function PanelMixin:Dock()
-    ns.Dock:Layout()
-end
-
 function PanelMixin:Layer()
     local host = ns.Dock:Host(self)
     if not host then
@@ -215,15 +223,17 @@ function PanelMixin:Layer()
 end
 
 function PanelMixin:Open()
-    if self.toggle then self.toggle:Refresh(false) end
+    for _, toggle in ipairs(self.toggles) do
+        toggle:Refresh(false)
+    end
     self:Layer()
     UI.FadeIn(self, FADE_TIME)
-    self:Dock()
+    ns.Dock:Layout()
 end
 
 function PanelMixin:ListTop()
     local top = PAD + HEADER_HEIGHT + math.ceil(self.subtitle:GetStringHeight())
-    if self.toggle then top = top + TOGGLE_GAP + TOGGLE_HEIGHT end
+    if #self.toggles > 0 then top = top + TOGGLE_GAP + #self.toggles * TOGGLE_HEIGHT end
     return top + LIST_GAP
 end
 
@@ -240,7 +250,6 @@ function PanelMixin:PaintRows(entries, create, paint)
         paint(row, fresh)
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", 0, -y)
-        row.divider:SetShown(index > 1)
         y = y + row:GetHeight() + ROW_GAP
         if fresh then FadeInRow(row) end
         row:Show()
@@ -284,7 +293,7 @@ function PanelMixin:EndDrag()
         ns.Set(self.offset.y, y + Round(self:GetTop() - self.dragTop))
     end
     self.dragLeft, self.dragTop = nil, nil
-    self:Dock()
+    ns.Dock:Layout()
 end
 
 local function MakeMovable(panel, opts)
@@ -299,7 +308,7 @@ local function MakeMovable(panel, opts)
         offset = function() return panel:Offset() end,
     })
     ns.Listen("SETTING_CHANGED", function(key)
-        if panel:IsShown() and (key == nil or key == offset.x or key == offset.y) then panel:Dock() end
+        if panel:IsShown() and (key == nil or key == offset.x or key == offset.y) then ns.Dock:Layout() end
     end)
 end
 
@@ -311,9 +320,12 @@ function SidePanel.Create(name, opts)
     panel:EnableMouse(true)
     panel:Hide()
     panel.rows = {}
-    panel.background = SidePanel.AddBackground(panel, OPAQUE_WINDOW)
+    panel.background = AddBackground(panel, OPAQUE_WINDOW)
     CreateHeader(panel, opts)
-    if opts.toggle then CreateToggle(panel, opts.toggle) end
+    panel.toggles = {}
+    for index, toggle in ipairs(opts.toggles or {}) do
+        CreateToggle(panel, toggle, index)
+    end
     CreateList(panel, opts)
     CreateFooter(panel, opts)
     MakeMovable(panel, opts)
@@ -359,13 +371,9 @@ end
 
 function SidePanel.NewRow(panel, onButton, tooltipItem)
     local row = CreateFrame("Frame", nil, panel.list)
-    row:SetSize(SidePanel.ROW_WIDTH, HEAD_HEIGHT)
+    row:SetSize(ROW_WIDTH, HEAD_HEIGHT)
     row.tooltipItem = tooltipItem
     row.fade = {}
-
-    row.divider = Hairline(row)
-    row.divider:SetPoint("TOPLEFT", 0, ROW_GAP / 2)
-    row.divider:SetPoint("TOPRIGHT", 0, ROW_GAP / 2)
 
     local head = CreateFrame("Frame", nil, row)
     head:SetPoint("TOPLEFT")
@@ -401,4 +409,107 @@ function SidePanel.NewRow(panel, onButton, tooltipItem)
     head:SetScript("OnLeave", W.HideHint)
     W.RowHover(head)
     return row
+end
+
+local function CreateChoice(row, index)
+    local choice = CreateFrame("Button", nil, row.choices)
+    choice:SetHeight(CHOICE_HEIGHT)
+    choice:SetPoint("LEFT")
+    choice:SetPoint("RIGHT")
+    choice:SetMotionScriptsWhileDisabled(true)
+    local hover = choice:CreateTexture(nil, "BACKGROUND")
+    hover:SetAllPoints()
+    W.HoverFill(choice, hover, CLEAR, CHOICE_HOVER)
+    choice.price = UI.Text(choice, T.label, C.text)
+    choice.price:SetPoint("RIGHT", -CHOICE_INSET, 0)
+    choice.price:SetWidth(PRICE_WIDTH)
+    choice.price:SetJustifyH("RIGHT")
+    choice.range = UI.Text(choice, T.label, C.muted)
+    choice.range:SetPoint("RIGHT", choice.price, "LEFT", -COLUMN_GAP, 0)
+    choice.range:SetWidth(RANGE_WIDTH)
+    choice.range:SetJustifyH("RIGHT")
+    choice.name = UI.Text(choice, T.label, C.text)
+    choice.name:SetPoint("LEFT", CHOICE_INSET, 0)
+    choice.name:SetPoint("RIGHT", choice.range, "LEFT", -COLUMN_GAP, 0)
+    choice.name:SetJustifyH("LEFT")
+    choice:SetScript("OnClick", function(self) row.onPick(row.entry, self.offer.potion) end)
+    choice.UpdateTooltip = row.onChoiceEnter
+    choice:HookScript("OnEnter", row.onChoiceEnter)
+    choice:HookScript("OnLeave", W.HideHint)
+    row.choiceButtons[index] = choice
+    return choice
+end
+
+local function MoveSelection(row, y, animate)
+    local function Apply(_, value)
+        row.selection:SetPoint("TOPLEFT", 0, -value)
+        row.selection:SetPoint("TOPRIGHT", 0, -value)
+    end
+    if animate then
+        UI.Tween(row.slide, y, SLIDE_TIME, Apply)
+    else
+        UI.SnapTween(row.slide, y, Apply)
+    end
+end
+
+function SidePanel.CreateChoices(row, onPick, onChoiceEnter)
+    local choices = CreateFrame("Frame", nil, row)
+    choices:SetPoint("TOPLEFT", TEXT_INDENT, -(HEAD_HEIGHT + CHOICES_TOP))
+    choices:SetPoint("TOPRIGHT", 0, -(HEAD_HEIGHT + CHOICES_TOP))
+    AddBackground(choices, C.control)
+    row.selection = choices:CreateTexture(nil, "BORDER")
+    row.selection:SetColorTexture(unpack(SELECTED_FILL))
+    row.selection:SetHeight(CHOICE_HEIGHT)
+    row.selection:Hide()
+    row.mark = choices:CreateTexture(nil, "ARTWORK")
+    row.mark:SetColorTexture(unpack(C.accent))
+    row.mark:SetPoint("TOPLEFT", row.selection)
+    row.mark:SetPoint("BOTTOMLEFT", row.selection)
+    row.mark:SetWidth(MARK_WIDTH)
+    row.mark:Hide()
+    row.choices = choices
+    row.choiceButtons = {}
+    row.slide = {}
+    row.onPick = onPick
+    row.onChoiceEnter = onChoiceEnter
+end
+
+function SidePanel.PaintChoices(row, fresh, paint)
+    local entry = row.entry
+    local offers = entry.offers
+    local count = #offers
+    row.choices:SetShown(count > 1)
+    if count < 2 then return 0 end
+    local selected
+    for index, offer in ipairs(offers) do
+        local choice = row.choiceButtons[index] or CreateChoice(row, index)
+        choice:SetPoint("TOP", 0, -(index - 1) * CHOICE_HEIGHT)
+        local chosen = entry.offer == offer
+        if chosen then selected = index end
+        choice.offer = offer
+        choice.name:SetText(ns.Catalog.Name(offer.potion))
+        choice.name:SetTextColor(unpack(chosen and C.accent or C.text))
+        choice.range:SetText(ns.Catalog.Range(offer.potion))
+        paint(choice, offer, chosen)
+        choice:Show()
+    end
+    for index = count + 1, #row.choiceButtons do
+        row.choiceButtons[index]:Hide()
+    end
+    row.choices:SetHeight(count * CHOICE_HEIGHT)
+    local slide = row.selection:IsShown() and not fresh
+    row.selection:SetShown(selected ~= nil)
+    row.mark:SetShown(selected ~= nil)
+    if selected then MoveSelection(row, (selected - 1) * CHOICE_HEIGHT, slide) end
+    return CHOICES_TOP + count * CHOICE_HEIGHT
+end
+
+function SidePanel.Stock(entry)
+    local target = ns.Inventory.StockTarget(entry.type)
+    if entry.mail > 0 then
+        if entry.bank > 0 then return string.format(L.AH_HAVE_BANK_MAIL, entry.have, target, entry.bank, entry.mail) end
+        return string.format(L.AH_HAVE_MAIL, entry.have, target, entry.mail)
+    end
+    if entry.bank > 0 then return string.format(L.AH_HAVE_BANK, entry.have, target, entry.bank) end
+    return string.format(L.AH_HAVE, entry.have, target)
 end

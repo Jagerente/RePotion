@@ -6,9 +6,6 @@ local Bank = ns.Bank
 local Catalog = ns.Catalog
 local SidePanel = ns.SidePanel
 
-local BankPanel = {}
-ns.BankPanel = BankPanel
-
 local HOSTS = { "EUI_BankFrame", "BankFrame" }
 
 local panel
@@ -60,16 +57,12 @@ local function Create()
         title = "BANK_TITLE",
         empty = "BANK_DONE",
         onAction = function() Bank.Take() end,
-        toggle = { key = "bankAuto", label = "BANK_AUTO", desc = "BANK_AUTO_DESC" },
+        toggles = { { key = "bankAuto", label = "BANK_AUTO", desc = "BANK_AUTO_DESC" } },
         hosts = HOSTS,
         slot = "bank",
         offset = { x = "bankX", y = "bankY" },
         settingsPage = "bank",
     })
-end
-
-function BankPanel.IsShown()
-    return panel ~= nil and panel:IsShown()
 end
 
 ns.Listen("BANK_SHOWN", function(open)
@@ -82,13 +75,10 @@ ns.Listen("BANK_SHOWN", function(open)
     panel:Open()
 end)
 
-ns.Listen("BANK_CHANGED", function()
-    if panel and panel:IsShown() then Paint() end
-end)
-
 local function RepaintIfShown()
     if panel and panel:IsShown() then Paint() end
 end
 
+ns.Listen("BANK_CHANGED", RepaintIfShown)
 ns.Listen("LOCALE_CHANGED", RepaintIfShown)
 ns.Listen("NAMES_CHANGED", RepaintIfShown)

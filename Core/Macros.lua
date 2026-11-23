@@ -8,17 +8,9 @@ local TOOLTIP_LINE = "#showtooltip"
 local NAMES = { health = "RePotion Health", mana = "RePotion Mana", freeAction = "RePotion Action" }
 local CHARACTER, ACCOUNT = true, false
 
-function Macros.Name(potionType)
-    return NAMES[potionType.key]
-end
-
 local function Index(potionType)
     local index = GetMacroIndexByName(NAMES[potionType.key])
     if index and index > 0 then return index end
-end
-
-function Macros.Exists(potionType)
-    return Index(potionType) ~= nil
 end
 
 local function Body(record)

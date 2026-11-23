@@ -17,7 +17,6 @@ local BUTTON_HEIGHT, BUTTON_PAD, GROUP_GAP = 22, 10, 2
 local CHOICE_MARK_WIDTH = 2
 local THUMB_SIZE, THUMB_HOVER_SIZE, RAIL_HEIGHT = 10, 12, 3
 local ROW_HOVER = { 1, 1, 1, 0.035 }
-local LOCKED_ALPHA = 0.5
 local SCROLLBAR_INSET = 2
 
 local bound = {}
@@ -69,7 +68,10 @@ function Widgets.HoverFill(frame, texture, base, hover)
         Apply(state, state.tweenValue or 0)
     end
     UI.SnapTween(state, 0, Apply)
-    frame:HookScript("OnEnter", function() UI.Tween(state, 1, HOVER_TIME, Apply) end)
+    frame:HookScript("OnEnter", function(self)
+        if self.IsEnabled and not self:IsEnabled() then return end
+        UI.Tween(state, 1, HOVER_TIME, Apply)
+    end)
     frame:HookScript("OnLeave", function() UI.Tween(state, 0, HOVER_TIME, Apply) end)
     return state
 end
@@ -152,6 +154,7 @@ function Widgets.Button(parent, key, onClick, style, width)
     local look = BUTTON_STYLES[style or "default"]
     local button = CreateFrame("Button", nil, parent)
     button:SetHeight(BUTTON_HEIGHT)
+    button:SetMotionScriptsWhileDisabled(true)
     local fill = button:CreateTexture(nil, "BACKGROUND")
     fill:SetAllPoints()
     local hover = Widgets.HoverFill(button, fill, look.fill, look.hover)
@@ -236,30 +239,20 @@ function Widgets.Toggle(parent, width, opts)
     label:SetPoint("RIGHT", switch, "LEFT", -12, 0)
     label:SetJustifyH("LEFT")
     Widgets.Bind(label, opts.label)
-    local function IsLocked()
-        return opts.locked ~= nil and opts.locked()
-    end
     row:SetScript("OnClick", function()
-        if IsLocked() then return end
         opts.set(not opts.get())
         Widgets.SetSwitch(switch, opts.get(), true)
     end)
     row:HookScript("OnEnter", function(self)
-        local locked = IsLocked()
-        Widgets.SetSwitchHover(switch, not locked)
-        ShowHint(self, locked and opts.lockedDesc or opts.desc)
+        Widgets.SetSwitchHover(switch, true)
+        ShowHint(self, opts.desc)
     end)
     row:HookScript("OnLeave", function(self)
         Widgets.SetSwitchHover(switch, false)
         HideHint(self)
     end)
     function row:Refresh(animate)
-        local locked = IsLocked()
-        switch:SetAlpha(locked and LOCKED_ALPHA or 1)
-        label:SetTextColor(unpack(locked and C.muted or C.text))
-        local on = opts.get()
-        if locked then on = opts.lockedState end
-        Widgets.SetSwitch(switch, on, animate)
+        Widgets.SetSwitch(switch, opts.get(), animate)
     end
     row:Refresh()
     return row

@@ -7,7 +7,6 @@ UI.COLORS = {
     window = { 0.078, 0.076, 0.072, 0.98 },
     control = { 0.149, 0.145, 0.137, 1 },
     controlHover = { 0.196, 0.190, 0.180, 1 },
-    selected = { 0.176, 0.170, 0.160, 1 },
     text = { 0.957, 0.949, 0.929, 1 },
     muted = { 0.808, 0.788, 0.749, 1 },
     faint = { 0.659, 0.639, 0.600, 1 },
@@ -201,11 +200,6 @@ function UI.Tween(owner, to, duration, apply, done)
         tweens[owner] = tween
     end
     tweenDriver:Show()
-end
-
-function UI.StopTween(owner)
-    tweens[owner] = nil
-    incoming[owner] = nil
 end
 
 function UI.SnapTween(owner, value, apply)
