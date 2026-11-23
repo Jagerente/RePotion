@@ -27,7 +27,7 @@ The macros are made per character when you first drag them. If all 30 character 
 
 ## Auction house
 
-When you open the auction house, a panel next to it lists the potions you are short of, up to the stock you keep (5 of each potion type by default, adjustable). Potions in the bank count toward it; switch off "Count potions in the bank" right in the panel to buy the full stock for your bags.
+When you open the auction house, a panel next to it lists the potions you are short of, up to the stock you keep (5 of each potion type by default, adjustable). Potions in the bank count toward it; switch off "Count potions in the bank" right in the panel to buy the full stock for your bags. The panel asks for prices only when you press **Find prices**, so opening the auction house to sell things doesn't slow it down.
 
 - The strongest potion on sale is chosen by default. Under each row every potion you can use is listed with how much it restores and its price per potion; click another one to buy it instead. Your pick is remembered, and the stock then counts that potion and stronger ones: with Superior picked, 2 Major and 3 Superior are 5 of 5 and the row says **Enough**. Click the top potion to go back to the strongest.
 - Potions that restore less than 20% of your max health or mana (adjustable per type) aren't listed. A level 60 warrior with 4000 health sees Superior and Major Healing Potions, not Healing Potions.
