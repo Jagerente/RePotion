@@ -39,6 +39,7 @@ local CHOICE_HOVER = { 1, 1, 1, 0.05 }
 local CLEAR = { 1, 1, 1, 0 }
 local PERCENT = 100
 local OPAQUE_WINDOW = { C.window[1], C.window[2], C.window[3], 1 }
+local TIP_GAP = " "
 local COINS = {
     { size = GOLD, key = "COIN_GOLD", color = "|cffe8c15a" },
     { size = SILVER, key = "COIN_SILVER", color = "|cffc4c9cf" },
@@ -85,6 +86,12 @@ end
 
 function SidePanel.AddLine(text, color)
     GameTooltip:AddLine(text, color[1], color[2], color[3], true)
+end
+
+function SidePanel.AddRightClick(action)
+    local gesture, value = C.accent, C.text
+    GameTooltip:AddLine(TIP_GAP)
+    GameTooltip:AddDoubleLine(L.TIP_RIGHT_CLICK, action, gesture[1], gesture[2], gesture[3], value[1], value[2], value[3])
 end
 
 local backgrounds = {}
@@ -372,13 +379,21 @@ local function ShowRowTooltip(head)
     local row = head:GetParent()
     GameTooltip:SetOwner(head, "ANCHOR_RIGHT")
     GameTooltip:SetItemByID(row.tooltipItem(row.entry))
+    if row.addHints then row.addHints(row.entry) end
     GameTooltip:Show()
 end
 
-function SidePanel.NewRow(panel, onButton, tooltipItem)
+local function OnRowMouseUp(head, button)
+    local row = head:GetParent()
+    if button == "RightButton" then row.onRightClick(row.entry) end
+end
+
+function SidePanel.NewRow(panel, onButton, tooltipItem, onRightClick, addHints)
     local row = CreateFrame("Frame", nil, panel.list)
     row:SetSize(ROW_WIDTH, HEAD_HEIGHT)
     row.tooltipItem = tooltipItem
+    row.onRightClick = onRightClick
+    row.addHints = addHints
     row.fade = {}
 
     local head = CreateFrame("Frame", nil, row)
@@ -413,6 +428,8 @@ function SidePanel.NewRow(panel, onButton, tooltipItem)
 
     head:SetScript("OnEnter", ShowRowTooltip)
     head:SetScript("OnLeave", W.HideHint)
+    head.UpdateTooltip = ShowRowTooltip
+    if onRightClick then head:SetScript("OnMouseUp", OnRowMouseUp) end
     W.RowHover(head)
     return row
 end
@@ -438,7 +455,14 @@ local function CreateChoice(row, index)
     choice.name:SetPoint("LEFT", CHOICE_INSET, 0)
     choice.name:SetPoint("RIGHT", choice.range, "LEFT", -COLUMN_GAP, 0)
     choice.name:SetJustifyH("LEFT")
-    choice:SetScript("OnClick", function(self) row.onPick(row.entry, self.offer.potion) end)
+    if row.onRefresh then choice:RegisterForClicks("LeftButtonUp", "RightButtonUp") end
+    choice:SetScript("OnClick", function(self, button)
+        if button == "RightButton" then
+            row.onRefresh(row.entry, self.offer)
+        else
+            row.onPick(row.entry, self.offer.potion)
+        end
+    end)
     choice.UpdateTooltip = row.onChoiceEnter
     choice:HookScript("OnEnter", row.onChoiceEnter)
     choice:HookScript("OnLeave", W.HideHint)
@@ -458,7 +482,7 @@ local function MoveSelection(row, y, animate)
     end
 end
 
-function SidePanel.CreateChoices(row, onPick, onChoiceEnter)
+function SidePanel.CreateChoices(row, onPick, onChoiceEnter, onRefresh)
     local choices = CreateFrame("Frame", nil, row)
     choices:SetPoint("TOPLEFT", TEXT_INDENT, -(HEAD_HEIGHT + CHOICES_TOP))
     choices:SetPoint("TOPRIGHT", 0, -(HEAD_HEIGHT + CHOICES_TOP))
@@ -478,6 +502,7 @@ function SidePanel.CreateChoices(row, onPick, onChoiceEnter)
     row.slide = {}
     row.onPick = onPick
     row.onChoiceEnter = onChoiceEnter
+    row.onRefresh = onRefresh
 end
 
 function SidePanel.PaintChoices(row, fresh, paint)

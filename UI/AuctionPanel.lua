@@ -63,14 +63,7 @@ local function OnSale(offer)
     return offer ~= nil and offer.status == Market.READY
 end
 
-local function ShowChoiceTooltip(choice)
-    local offer = choice.offer
-    GameTooltip:SetOwner(choice, "ANCHOR_RIGHT")
-    GameTooltip:SetItemByID(offer.item)
-    if offer.status == Market.IDLE then
-        GameTooltip:Show()
-        return
-    end
+local function AddPriceLines(offer)
     GameTooltip:AddLine(" ")
     if not Market.IsSettled(offer) then
         AddLine(L.AH_SEARCHING, C.muted)
@@ -85,7 +78,24 @@ local function ShowChoiceTooltip(choice)
         end
         if offer.beyond then AddLine(string.format(L.AH_TIP_BEYOND, Money(offer.beyond)), C.warn) end
     end
+end
+
+local function CanRefresh(entry)
+    return entry.status ~= Market.BUYING
+end
+
+local function ShowChoiceTooltip(choice)
+    local offer = choice.offer
+    GameTooltip:SetOwner(choice, "ANCHOR_RIGHT")
+    GameTooltip:SetItemByID(offer.item)
+    if offer.status ~= Market.IDLE then AddPriceLines(offer) end
+    if CanRefresh(offer.entry) then SidePanel.AddRightClick(L.AH_TIP_REFRESH) end
     GameTooltip:Show()
+end
+
+local function AddRowHints(entry)
+    if not CanRefresh(entry) then return end
+    SidePanel.AddRightClick(#entry.offers > 1 and L.AH_TIP_REFRESH_ALL or L.AH_TIP_REFRESH)
 end
 
 local function ChoicePrice(offer)
@@ -103,7 +113,7 @@ local function PaintChoice(choice, offer, chosen)
     choice.price:SetText(text)
     choice.price:SetTextColor(unpack(color))
     local available = Market.IsAvailable(offer)
-    choice:SetEnabled(available and not Market.Busy(offer.entry))
+    choice:SetEnabled(CanRefresh(offer.entry))
     choice:SetAlpha((available or chosen) and 1 or SidePanel.DISABLED_ALPHA)
 end
 
@@ -115,9 +125,13 @@ local function OnRowButton(entry)
     end
 end
 
+local function RefreshRow(entry)
+    Market.Refresh(entry)
+end
+
 local function CreateRow(owner)
-    local row = SidePanel.NewRow(owner, OnRowButton, ShownItem)
-    SidePanel.CreateChoices(row, Market.Pick, ShowChoiceTooltip)
+    local row = SidePanel.NewRow(owner, OnRowButton, ShownItem, RefreshRow, AddRowHints)
+    SidePanel.CreateChoices(row, Market.Pick, ShowChoiceTooltip, Market.Refresh)
     return row
 end
 
@@ -140,7 +154,7 @@ local function PaintRow(row, fresh)
         row.price:SetText(Money(quoted and entry.quotedTotal or entry.offer.nextCost))
         row.price:SetTextColor(unpack(confirm and C.warn or C.text))
     elseif estimate then
-        row.price:SetText(string.format(ESTIMATE_FORMAT, ShortMoney(estimate)))
+        row.price:SetText(string.format(ESTIMATE_FORMAT, Money(estimate)))
         row.price:SetTextColor(unpack(C.muted))
     end
 
@@ -154,16 +168,12 @@ end
 local function Paint()
     panel.subtitle:SetText(L.AH_SUBTITLE)
     local waiting, known = Market.PriceCounts()
-    local total, approximate = Market.Total()
+    local total, approximate, counted = Market.Total()
     local offerAll = waiting >= FIND_ALL_MIN_ROWS
-    local showTotal = known > 0 or approximate
+    local showTotal = counted > 0
     panel:SetFooterShown(offerAll or showTotal)
     panel:PaintRows(Market.entries, CreateRow, PaintRow)
-    if approximate then
-        panel.footerText:SetText(string.format(L.AH_ABOUT, ShortMoney(total)))
-    else
-        panel.footerText:SetText(string.format(L.AH_TOTAL, Money(total)))
-    end
+    panel.footerText:SetText(string.format(approximate and L.AH_ABOUT or L.AH_TOTAL, Money(total)))
     panel.footerText:SetShown(showTotal)
     panel:SetAction(L.AH_FIND_PRICES, true)
     panel.action:SetShown(offerAll)
@@ -174,7 +184,7 @@ local function Create()
     panel = SidePanel.Create("RePotionAuctionPanel", {
         title = "AH_TITLE",
         empty = "AH_EMPTY",
-        refresh = Market.Refresh,
+        refresh = function() Market.Refresh() end,
         onAction = function() Market.FindPrices() end,
         toggles = { { key = "countBank", label = "COUNT_BANK", desc = "COUNT_BANK_DESC" } },
         hosts = HOSTS,
